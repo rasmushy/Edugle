@@ -1,4 +1,4 @@
-# Edugle
+# [Edugle](https://github.com/rasmushy/Edugle-frontend)
 This school project aims to create a real-time, text-based chat platform that allows users to engage in conversations within various chat rooms. Built using technologies like GraphQL, Node.js, and a NoSQL database. Chat rooms will be created by site itself and users can change rooms with site navigation. Idea is that you will be randomised into next room with other user.
 
 ## Focus groups:
