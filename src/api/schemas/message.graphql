@@ -1,0 +1,6 @@
+type Message {
+    id: ID!
+    created_date: Date!
+    content: String!
+    sender: User!
+}

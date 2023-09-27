@@ -1,0 +1,6 @@
+type Chat {
+    id: ID!
+    created_date: Date!
+    users: [User!]!
+    messages: [Message]
+}
