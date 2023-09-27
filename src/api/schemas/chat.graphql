@@ -1,3 +1,5 @@
+scalar Date
+
 type Chat {
     id: ID!
     created_date: Date!
