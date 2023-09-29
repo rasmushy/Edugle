@@ -13,7 +13,6 @@ import {createRateLimitRule} from 'graphql-rate-limit';
 import {shield} from 'graphql-shield';
 import {applyMiddleware} from 'graphql-middleware';
 import {makeExecutableSchema} from '@graphql-tools/schema';
-import MessageResponse from './interfaces/MessageResponse';
 import api from './api';
 
 const app = express();

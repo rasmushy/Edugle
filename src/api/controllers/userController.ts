@@ -203,7 +203,6 @@ const userPutAsAdmin = async (req: Request, res: Response, next: NextFunction) =
 	}
 };
 
-// TODO: add function to check if a token is valid
 const checkToken = async (req: Request, res: Response, next: NextFunction) => {
 	const userFromToken: OutputUser = res.locals.user as OutputUser;
 	const message: DBMessageResponse = {

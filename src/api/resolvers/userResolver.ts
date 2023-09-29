@@ -1,11 +1,6 @@
 import {GraphQLError} from 'graphql';
-import authenticate from '../../functions/authenticate';
-import LoginMessageResponse from '../../interfaces/LoginMessageResponse';
 import {User, UserIdWithToken} from '../../interfaces/User';
-import userModel from '../models/userModel';
-import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
 dotenv.config();
 
 export default {

@@ -15,6 +15,7 @@ const loginPost = async (req: Request<{}, {}, {username: string; password: strin
 				.array()
 				.map((error) => `${error.msg}: ${error.param}`)
 				.join(', ');
+			next(new CustomError(messages, 400));
 			return;
 		}
 
