@@ -17,6 +17,7 @@ import MessageResponse from './interfaces/MessageResponse';
 import api from './api';
 
 const app = express();
+app.use(express.json());
 
 (async () => {
 	try {

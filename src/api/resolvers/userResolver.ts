@@ -10,9 +10,13 @@ dotenv.config();
 
 export default {
 	Query: {
-		users: async () => {
+		users: async (_parent: unknown, args: {token: string}) => {
 			try {
-				const response = await fetch(`${process.env.AUTH_URL}/users`);
+				const response = await fetch(`${process.env.AUTH_URL}/users`, {
+					headers: {
+						Authorization: `Bearer ${args.token}`,
+					},
+				});
 				if (!response.ok) {
 					throw new GraphQLError('Failed to fetch users', {
 						extensions: {code: 'NOT_FOUND'},
@@ -100,12 +104,11 @@ export default {
 					body: JSON.stringify(args.user),
 				});
 				if (!response.ok) {
-					console.log('asdasdas' + process.env.AUTH_URL + '/users');
 					throw new GraphQLError('User registration failed', {
 						extensions: {code: 'VALIDATION_ERROR'},
 					});
 				}
-				const user = await response.json();
+				const user: User = await response.json();
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {

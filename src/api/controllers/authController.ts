@@ -7,11 +7,9 @@ import jwt from 'jsonwebtoken';
 import LoginMessageResponse from '../../interfaces/LoginMessageResponse';
 import CustomError from '../../classes/CustomError';
 
-// TODO: Create login controller that creates a jwt token and returns it to the user
 const loginPost = async (req: Request<{}, {}, {username: string; password: string}>, res: Response, next: NextFunction) => {
 	try {
 		const errors = validationResult(req);
-
 		if (!errors.isEmpty()) {
 			const messages = errors
 				.array()
@@ -38,11 +36,11 @@ const loginPost = async (req: Request<{}, {}, {username: string; password: strin
 		const message: LoginMessageResponse = {
 			message: 'Login successful',
 			user: {
-				name: user.username,
+				username: user.username,
 				email: user.email,
-				_id: user._id,
+				id: user._id,
 				password: user.password,
-				role: '',
+				role: user.role,
 				lastLogin: new Date(),
 			},
 			token: token,

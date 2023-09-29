@@ -35,7 +35,6 @@ const userGet = async (req: Request<{id: String}>, res: Response, next: NextFunc
 };
 
 const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFunction) => {
-	console.log('pippeli' + req.body);
 	try {
 		const errors = validationResult(req);
 
@@ -48,6 +47,15 @@ const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFun
 			return;
 		}
 
+		// Check if user already exists or email is already in use
+
+		const userExists = await userModel.findOne({$or: [{username: req.body.username}, {email: req.body.email}]});
+
+		if (userExists) {
+			next(new CustomError('User already exists', 400));
+			return;
+		}
+
 		const user = req.body;
 		user.password = await bcrypt.hash(user.password, salt);
 
@@ -55,9 +63,10 @@ const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFun
 		const response: DBMessageResponse = {
 			message: 'User created',
 			user: {
-				user_name: newUser.username,
+				username: newUser.username,
 				email: newUser.email,
 				id: newUser._id,
+				password: newUser.password,
 			},
 		};
 
@@ -90,9 +99,10 @@ const userPut = async (req: Request, res: Response, next: NextFunction) => {
 		const response: DBMessageResponse = {
 			message: 'User updated',
 			user: {
-				user_name: result.username,
+				username: result.username,
 				email: result.email,
 				id: result._id,
+				password: result.password,
 			},
 		};
 
@@ -115,9 +125,10 @@ const userDelete = async (req: Request, res: Response, next: NextFunction) => {
 		const response: DBMessageResponse = {
 			message: 'User deleted',
 			user: {
-				user_name: result.username,
+				username: result.username,
 				email: result.email,
 				id: result._id,
+				password: result.password,
 			},
 		};
 
@@ -144,9 +155,10 @@ const userDeleteAsAdmin = async (req: Request, res: Response, next: NextFunction
 		const response: DBMessageResponse = {
 			message: 'User deleted',
 			user: {
-				user_name: result.username,
+				username: result.username,
 				email: result.email,
 				id: result._id,
+				password: result.password,
 			},
 		};
 
@@ -178,9 +190,10 @@ const userPutAsAdmin = async (req: Request, res: Response, next: NextFunction) =
 		const response: DBMessageResponse = {
 			message: 'User updated',
 			user: {
-				user_name: result.username,
+				username: result.username,
 				email: result.email,
 				id: result._id,
+				password: result.password,
 			},
 		};
 

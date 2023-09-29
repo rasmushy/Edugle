@@ -3,6 +3,7 @@ import ErrorResponse from './interfaces/ErrorResponse';
 import jwt from 'jsonwebtoken';
 import {OutputUser, TokenUser} from './interfaces/User';
 import userModel from './api/models/userModel';
+import CustomError from './classes/CustomError';
 
 export function notFound(req: Request, res: Response, next: NextFunction) {
 	res.status(404);
@@ -24,12 +25,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 	try {
 		const bearer = req.headers.authorization;
 		if (!bearer) {
+			next(new CustomError('Unauthorized', 401));
 			return;
 		}
 
 		const token = bearer.split(' ')[1];
 
 		if (!token) {
+			next(new CustomError('Unauthorized', 401));
 			return;
 		}
 
@@ -38,6 +41,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 		const user = (await userModel.findById(userFromToken.id).select('-password, -role')) as OutputUser;
 
 		if (!user) {
+			next(new CustomError('Unauthorized', 401));
 			return;
 		}
 
@@ -46,6 +50,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
 		next();
 	} catch (error) {
-		return;
+		next(new CustomError('Unauthorized', 401));
 	}
 };
