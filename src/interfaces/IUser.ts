@@ -1,6 +1,6 @@
 export interface IUser {
-	_id: string;
-	name: string;
+	id: string;
+	username: string;
 	email: string;
 	password: string;
 	role: string;
@@ -8,7 +8,7 @@ export interface IUser {
 }
 
 export interface IUserInputDTO {
-	name: string;
+	username: string;
 	email: string;
 	password: string;
 }

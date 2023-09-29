@@ -13,8 +13,10 @@ import {createRateLimitRule} from 'graphql-rate-limit';
 import {shield} from 'graphql-shield';
 import {applyMiddleware} from 'graphql-middleware';
 import {makeExecutableSchema} from '@graphql-tools/schema';
+import api from './api';
 
 const app = express();
+app.use(express.json());
 
 (async () => {
 	try {
@@ -24,7 +26,7 @@ const app = express();
 
 		const permissions = shield({
 			Mutation: {
-				login: rateLimitRule({window: '1s', max: 5}),
+				loginUser: rateLimitRule({window: '1s', max: 5}),
 			},
 		});
 
@@ -58,7 +60,7 @@ const app = express();
 				context: async ({req}) => authenticate(req),
 			})
 		);
-
+		app.use('/api', api);
 		app.use(notFound);
 		app.use(errorHandler);
 	} catch (error) {
