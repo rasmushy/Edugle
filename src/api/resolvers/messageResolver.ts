@@ -69,7 +69,6 @@ export default {
 				});
 			}
 			const user = await response.json();
-			console.log(user);
 			return user;
 		},
 	},

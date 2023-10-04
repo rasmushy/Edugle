@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default {
-	Message: {
+	/* Message: {
 		sender: async (parent: Message) => {
 			console.log('oon turha');
 
@@ -18,18 +18,15 @@ export default {
 			const user = await response.json();
 			return user;
 		},
-	},
+	}, */
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
-			console.log(args.token);
 			try {
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					headers: {
 						Authorization: `Bearer ${args.token}`,
 					},
 				});
-				console.log('vituiks män');
-				console.log(response);
 				if (!response.ok) {
 					throw new GraphQLError('Failed to fetch users', {
 						extensions: {code: 'NOT_FOUND'},
