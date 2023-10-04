@@ -8,7 +8,10 @@ dotenv.config();
 
 export default {
 	Query: {
-		messagesById: async (_parens: unknown, args: Message) => {
+		messages: async () => {
+			return await messageModel.find({});
+		},
+		messageById: async (_parens: unknown, args: Message) => {
 			return await messageModel.findById(args.id);
 		},
 		messagesBySender: async (_parent: unknown, args: UserIdWithToken) => {
@@ -16,17 +19,15 @@ export default {
 		},
 	},
 	Mutation: {
-		createMessage: async (_parent: unknown, args: Message, user: UserIdWithToken) => {
-			console.log('asdsadsdsa');
-			console.log(user);
-			if (!user.token) return user;
-			args.sender = user.id as unknown as Types.ObjectId;
-			const message: Message = new messageModel({
-				date: args.date,
-				content: args.content,
-				sender: args.sender,
+		createMessage: async (_parent: unknown, args: {message: Message; user: UserIdWithToken}) => {
+			if (!args.user.token) return;
+			args.message.sender = args.user.id as unknown as Types.ObjectId;
+			const newMessage: Message = new messageModel({
+				date: args.message.date,
+				content: args.message.content,
+				sender: args.message.sender,
 			}) as Message;
-			const createMessage: Message = (await messageModel.create(message)) as Message;
+			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
 			if (!createMessage) {
 				throw new GraphQLError('Failed to create message', {
 					extensions: {code: 'NOT_CREATED'},

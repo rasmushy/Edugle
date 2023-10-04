@@ -33,6 +33,7 @@ input RegisterInput {
 
 input UserWithTokenInput {
 	token: String!
+	id: ID!
 }
 
 input UserInput {
