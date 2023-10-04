@@ -8,8 +8,13 @@ type User {
 	lastLogin: Date
 }
 
-type UserId {
+type UserInfo {
 	id: ID!
+	username: String
+	email: String
+	description: String
+	avatar: String
+	lastLogin: Date
 }
 
 type TokenMessage {
@@ -33,10 +38,6 @@ input RegisterInput {
 
 input UserWithTokenInput {
 	token: String!
-	id: ID!
-}
-
-input UserInput {
 	id: ID!
 }
 

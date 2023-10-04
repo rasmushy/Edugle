@@ -6,18 +6,23 @@ dotenv.config();
 export default {
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
+			console.log(args.token);
 			try {
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					headers: {
 						Authorization: `Bearer ${args.token}`,
 					},
 				});
+				console.log('vituiks män');
+				console.log(response);
 				if (!response.ok) {
 					throw new GraphQLError('Failed to fetch users', {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+				console.log('vituiks män');
 				const users = await response.json();
+				console.log('vituiks män');
 				return users;
 			} catch (error) {
 				if (error instanceof Error) {

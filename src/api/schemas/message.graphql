@@ -4,7 +4,7 @@ type Message {
 	id: ID!
 	date: Date!
 	content: String!
-	sender: UserId!
+	sender: UserInfo!
 }
 
 type Query {
@@ -16,7 +16,7 @@ type Query {
 input MessageInput {
 	date: Date!
 	content: String!
-	sender: UserInput!
+	sender: ID!
 }
 
 type Mutation {

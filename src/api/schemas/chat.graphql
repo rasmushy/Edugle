@@ -9,7 +9,7 @@ type Chat {
 
 input createChatInput {
 	created_date: Date!
-	users: [UserInput]
+	users: [ID!]
 	messages: [MessageInput]
 }
 
