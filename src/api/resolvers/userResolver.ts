@@ -22,6 +22,7 @@ export default {
 
 				users.map((user: User) => {
 					user.id = user._id;
+					user.password = '********';
 					delete user._id;
 					return user;
 				});
@@ -43,6 +44,8 @@ export default {
 					});
 				}
 				const user = await response.json();
+				user.id = user._id;
+				delete user._id;
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
