@@ -66,7 +66,7 @@ export default {
 		},
 	},
 	Mutation: {
-		loginUser: async (_parent: unknown, args: {credentials: {username: string; password: string}}) => {
+		loginUser: async (_parent: unknown, args: {credentials: {email: string; password: string}}) => {
 			try {
 				const response = await fetch(`${process.env.AUTH_URL}/auth/login`, {
 					method: 'POST',
@@ -112,14 +112,14 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		deleteUser: async (_parent: unknown, _args: unknown, user: UserIdWithToken) => {
+		deleteUser: async (_parent: unknown, _args: {id: String; token: String}) => {
 			try {
-				if (!user.token) return null;
+				if (!_args.token) return null;
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${user.token}`,
+						Authorization: `Bearer ${_args.token}`,
 					},
 				});
 				if (!response.ok) {
@@ -136,15 +136,26 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		deleteUserAsAdmin: async (_parent: unknown, args: User, user: UserIdWithToken) => {
+		deleteUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; deleteUserID: String}) => {
 			try {
-				if (!user.token || !user.role.includes('admin')) return null;
-				const res = await fetch(`${process.env.AUTH_URL}/users/${args.id}`, {
+				if (!args.user.token) return null;
+				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${args.user.id}`, {
+					headers: {
+						Authorization: `Bearer ${args.user.token}`,
+					},
+				});
+				const isAdmin = await isUserAdmin.json();
+				if (isAdmin.role.toLowerCase() !== 'admin') {
+					throw new GraphQLError('User is not an admin', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const res = await fetch(`${process.env.AUTH_URL}/users/${args.deleteUserID}`, {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${user.token}`,
-						role: user.role, // add role from user object
+						Authorization: `Bearer ${args.user.token}`,
+						role: isAdmin.role.toLowerCase(), // add role from user object
 					},
 				});
 				const userDeleted = await res.json();

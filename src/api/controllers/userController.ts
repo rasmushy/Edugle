@@ -23,7 +23,7 @@ const userListGet = async (req: Request, res: Response, next: NextFunction) => {
 
 const userGet = async (req: Request<{id: String}>, res: Response, next: NextFunction) => {
 	try {
-		const user = await userModel.findById(req.params.id).select('-password -role');
+		const user = await userModel.findById(req.params.id).select('-password');
 		if (!user) {
 			next(new CustomError('User not found', 404));
 			return;
@@ -141,11 +141,10 @@ const userDelete = async (req: Request, res: Response, next: NextFunction) => {
 const userDeleteAsAdmin = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const userId = req.params.id;
-		if (!res.locals.role.includes('admin')) {
+		if (req.headers.role === undefined || !req.headers.role.includes('admin')) {
 			next(new CustomError('Unauthorized', 401));
 			return;
 		}
-
 		const result: User = (await userModel.findByIdAndDelete(userId)) as User;
 		if (!result) {
 			next(new CustomError('User not found', 404));
