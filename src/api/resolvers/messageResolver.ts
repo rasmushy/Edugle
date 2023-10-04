@@ -35,9 +35,9 @@ export default {
 			}
 			return createMessage;
 		},
-		deleteMessage: async (_parent: unknown, args: Message, user: UserIdWithToken) => {
+		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {
 			const message: Message = (await messageModel.findById(args.id)) as Message;
-			if (!user.token || message.sender.toString() !== user.id) {
+			if (!args.user.token || message.sender.toString() !== args.user.id) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});

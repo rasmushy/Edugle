@@ -21,6 +21,6 @@ input MessageInput {
 
 type Mutation {
 	createMessage(message: MessageInput!, user: UserWithTokenInput!): Message
-	deleteMessage(id: ID!): Message
+	deleteMessage(id: ID!, user: UserWithTokenInput): Message
 	deleteMessageAsAdmin(id: ID!): Message
 }
