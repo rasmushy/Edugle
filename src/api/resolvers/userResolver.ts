@@ -17,7 +17,15 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const users = await response.json();
+
+				users.map((user: User) => {
+					user.id = user._id;
+					delete user._id;
+					return user;
+				});
+
 				return users;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -112,7 +120,7 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		deleteUser: async (_parent: unknown, _args: {id: String; token: String}) => {
+		deleteUser: async (_parent: unknown, _args: {token: String}) => {
 			try {
 				if (!_args.token) return null;
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
