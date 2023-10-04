@@ -3,8 +3,14 @@ scalar Date
 type Chat {
 	id: ID!
 	created_date: Date!
-	users: [User!]!
+	users: [User]
 	messages: [Message]
+}
+
+input createChatInput {
+	created_date: Date!
+	users: [UserInput]
+	messages: [MessageInput]
 }
 
 type Query {
@@ -12,6 +18,6 @@ type Query {
 }
 
 type Mutation {
-	createChat(created_date: Date!, users: [User!]!): Chat
+	createChat(Chat: createChatInput): Chat
 	deleteChatAsAdmin(id: ID!): Chat
 }

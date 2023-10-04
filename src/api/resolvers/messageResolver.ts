@@ -17,7 +17,9 @@ export default {
 	},
 	Mutation: {
 		createMessage: async (_parent: unknown, args: Message, user: UserIdWithToken) => {
-			if (!user.token) return null;
+			console.log('asdsadsdsa');
+			console.log(user);
+			if (!user.token) return user;
 			args.sender = user.id as unknown as Types.ObjectId;
 			const message: Message = new messageModel({
 				date: args.date,

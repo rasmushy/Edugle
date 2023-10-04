@@ -2,7 +2,7 @@ type Message {
 	id: ID!
 	created_date: Date!
 	content: String!
-	sender: User!
+	sender: UserId!
 }
 
 type Query {
@@ -10,7 +10,13 @@ type Query {
 	messagesBySender(sender: ID!): [Message]
 }
 
+input MessageInput {
+	created_date: Date!
+	content: String!
+	sender: UserInput!
+}
+
 type Mutation {
-	createMessage(created_date: Date!, content: String!, sender: ID!): Message
+	createMessage(String: String, SString: String): Message
 	deleteMessage(id: ID!): Message
 }
