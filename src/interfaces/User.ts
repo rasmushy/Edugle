@@ -29,4 +29,15 @@ interface TokenUser {
 	role: string;
 }
 
-export {User, UserIdWithToken, OutputUser, TokenUser};
+interface UserTest {
+	id?: string;
+	username?: string;
+	email?: string;
+	password?: string;
+	description?: string;
+	avatar?: string;
+	role?: string;
+	lastLogin?: Date;
+}
+
+export {User, UserIdWithToken, OutputUser, TokenUser, UserTest};

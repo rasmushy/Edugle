@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import LoginMessageResponse from '../../interfaces/LoginMessageResponse';
 import CustomError from '../../classes/CustomError';
 
-const loginPost = async (req: Request<{}, {}, {username: string; password: string}>, res: Response, next: NextFunction) => {
+const loginPost = async (req: Request<{}, {}, {email: string; password: string}>, res: Response, next: NextFunction) => {
 	try {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
@@ -19,8 +19,8 @@ const loginPost = async (req: Request<{}, {}, {username: string; password: strin
 			return;
 		}
 
-		const {username, password} = req.body;
-		const user: User = (await userModel.findOne({email: username})) as User;
+		const {email, password} = req.body;
+		const user: User = (await userModel.findOne({email: email})) as User;
 
 		if (!user) {
 			next(new CustomError('Incorrect username/password', 403));

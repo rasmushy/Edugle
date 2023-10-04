@@ -24,6 +24,10 @@ const messageModel = new mongoose.Schema<User>({
 		type: String,
 		required: false,
 	},
+	role: {
+		type: String,
+		default: 'user',
+	},
 });
 
 export default mongoose.model<User>('User', messageModel);

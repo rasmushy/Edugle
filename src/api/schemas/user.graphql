@@ -6,6 +6,7 @@ type User {
 	description: String
 	avatar: String
 	lastLogin: Date
+	role: String
 }
 
 type UserInfo {
@@ -24,7 +25,7 @@ type TokenMessage {
 }
 
 input LoginInput {
-	username: String!
+	email: String!
 	password: String!
 }
 
@@ -34,6 +35,12 @@ input RegisterInput {
 	password: String!
 	description: String
 	avatar: String
+	role: String
+}
+
+input deleteUserAsAdminInput {
+	id: ID!
+	token: String!
 }
 
 input UserWithTokenInput {
@@ -50,6 +57,6 @@ type Query {
 type Mutation {
 	loginUser(credentials: LoginInput!): TokenMessage
 	registerUser(user: RegisterInput!): TokenMessage
-	deleteUser: TokenMessage
-	deleteUserAsAdmin(id: ID!): TokenMessage
+	deleteUser(token: String): TokenMessage
+	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
 }
