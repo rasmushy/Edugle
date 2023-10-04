@@ -4,6 +4,6 @@ import {body} from 'express-validator';
 
 const router = express.Router();
 
-router.route('/login').post(body('username').escape(), body('password').escape(), loginPost);
+router.route('/login').post(body('email').escape(), body('password').escape(), loginPost);
 
 export default router;
