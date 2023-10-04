@@ -67,7 +67,6 @@ const getUsers = (url: string | Function, userdata: LoginMessageResponse): Promi
 					reject(err);
 				}
 				for (const user of res.body.data.users) {
-					console.log('user', user);
 					expect(user).toHaveProperty('username');
 					expect(user).toHaveProperty('email');
 				}
@@ -104,6 +103,9 @@ const getUserById = (url: string | Function, id: String): Promise<UserTest[]> =>
 				if (err) {
 					reject(err);
 				}
+				expect(res.body.data.getUserById).toHaveProperty('username');
+				expect(res.body.data.getUserById).toHaveProperty('email');
+				expect(res.body.data.getUserById).toHaveProperty('id');
 				resolve(res.body);
 			});
 	});
