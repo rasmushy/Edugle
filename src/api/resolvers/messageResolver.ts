@@ -9,7 +9,17 @@ dotenv.config();
 export default {
 	Query: {
 		messages: async () => {
-			return await messageModel.find({});
+			const response = await messageModel.find({});
+
+			console.log(response);
+
+			response.map((message: Message) => {
+				message.id = message._id;
+				delete message._id;
+				return message;
+			});
+
+			return response;
 		},
 		messageById: async (_parens: unknown, args: Message) => {
 			return await messageModel.findById(args.id);
