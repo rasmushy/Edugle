@@ -147,6 +147,11 @@ export default {
 						role: user.role, // add role from user object
 					},
 				});
+				if (!res.ok) {
+					throw new GraphQLError('User deletion failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
 				const userDeleted = await res.json();
 				return userDeleted;
 			} catch (error) {

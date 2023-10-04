@@ -1,11 +1,11 @@
-import {Document} from 'mongoose';
+import {Types, Document} from 'mongoose';
 import {User} from './User';
 
 interface Message extends Document {
 	_id: string;
 	date: Date;
 	content: string;
-	sender: User;
+	sender: Types.ObjectId | User;
 }
 
 export {Message};
