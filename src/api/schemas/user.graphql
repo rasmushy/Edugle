@@ -42,6 +42,6 @@ type Query {
 type Mutation {
 	loginUser(credentials: LoginInput!): TokenMessage
 	registerUser(user: RegisterInput!): TokenMessage
-	deleteUser(id: ID!, token: String): TokenMessage
+	deleteUser(token: String): TokenMessage
 	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
 }
