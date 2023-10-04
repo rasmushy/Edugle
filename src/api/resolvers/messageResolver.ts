@@ -10,12 +10,7 @@ export default {
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
-
-			console.log(response);
-
 			response.map((message: Message) => {
-				message.id = message._id;
-				delete message._id;
 				return message;
 			});
 
@@ -63,6 +58,19 @@ export default {
 			}
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
 			return deleteMessage;
+		},
+	},
+	Message: {
+		sender: async (parent: Message) => {
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
+			if (!response.ok) {
+				throw new GraphQLError(response.statusText, {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+			const user = await response.json();
+			console.log(user);
+			return user;
 		},
 	},
 };

@@ -30,4 +30,12 @@ const messageModel = new mongoose.Schema<User>({
 	},
 });
 
+messageModel.set('toJSON', {
+	transform: (document, returnedObject) => {
+		returnedObject.id = returnedObject._id;
+		delete returnedObject._id;
+		delete returnedObject.__v;
+	},
+});
+
 export default mongoose.model<User>('User', messageModel);

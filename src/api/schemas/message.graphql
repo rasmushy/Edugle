@@ -4,7 +4,7 @@ type Message {
 	id: ID!
 	date: Date!
 	content: String!
-	sender: UserInfo!
+	sender: User!
 }
 
 type Query {

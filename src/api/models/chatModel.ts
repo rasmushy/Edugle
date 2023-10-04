@@ -22,4 +22,12 @@ const chatModel = new mongoose.Schema<Chat>({
 	],
 });
 
+chatModel.set('toJSON', {
+	transform: (document, returnedObject) => {
+		returnedObject.id = returnedObject._id;
+		delete returnedObject._id;
+		delete returnedObject.__v;
+	},
+});
+
 export default mongoose.model<Chat>('Chat', chatModel);
