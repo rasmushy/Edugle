@@ -38,6 +38,7 @@ const registerUser = (url: string | Function, user: UserTest): Promise<UserTest>
 	});
 };
 
+// TODO: Korjaa kun jonne korjaa backendin
 const getUser = (url: string | Function): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
