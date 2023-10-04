@@ -1,6 +1,8 @@
 // eslint-disable-next-line node/no-unpublished-import
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
+import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
+import DBMessageResponse from '../src/interfaces/DBMessageResponse';
 
 const registerUser = (url: string | Function, user: UserTest): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
@@ -29,7 +31,8 @@ const registerUser = (url: string | Function, user: UserTest): Promise<UserTest>
 				if (err) {
 					reject(err);
 				}
-				console.log('res.body.data', res.body.data.registerUser.user);
+				expect(res.body.data.registerUser.user.username).toBe(user.username);
+				expect(res.body.data.registerUser.user.email).toBe(user.email);
 				resolve(res.body.data.registerUser.user);
 			});
 	});
@@ -53,7 +56,7 @@ const getUser = (url: string | Function): Promise<UserTest[]> => {
 	});
 };
 
-const loginUser = (url: string | Function, user: UserTest): Promise<UserTest> => {
+const loginUser = (url: string | Function, user: UserTest): Promise<LoginMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -82,33 +85,50 @@ const loginUser = (url: string | Function, user: UserTest): Promise<UserTest> =>
 				if (err) {
 					reject(err);
 				}
-				resolve(res.body.data.loginUser.user);
+				expect(res.body.data.loginUser.message).toBe('Login successful');
+				expect(res.body.data.loginUser.user.username).toBe(user.username);
+				expect(res.body.data.loginUser.user.email).toBe(user.email);
+				expect(res.body.data.loginUser.user).toHaveProperty('id');
+				expect(res.body.data.loginUser.token).toBeTruthy();
+				resolve(res.body.data.loginUser);
 			});
 	});
 };
-const deleteUser = (url: string | Function, user: UserTest): Promise<UserTest> => {
+const deleteUser = (url: string | Function, userData: LoginMessageResponse): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation deleteUser {
-						deleteUser {
-							user {
+				query: `mutation DelUser($deleteUserId: ID!, $token: String) {
+							deleteUser(id: $deleteUserId, token: $token) {
+								token
+								message
+								user {
 								id
+								username
+								email
+								password
+								description
+								avatar
+								lastLogin
+								role
+								}
 							}
-							token
-						}
-					}`,
+							}`,
 				variables: {
-					id: user.id,
+					deleteUserId: userData.user.id,
+					token: userData.token,
 				},
 			})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
 				}
-				resolve(res.body.data.deleteUser.user);
+				expect(res.body.data.deleteUser.message).toBe('User deleted');
+				expect(res.body.data.deleteUser.user.username).toBe(userData.user.username);
+				expect(res.body.data.deleteUser.user.email).toBe(userData.user.email);
+				resolve(res.body);
 			});
 	});
 };

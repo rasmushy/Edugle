@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import {registerUser, loginUser, deleteUser, getUser} from './userTestFunc';
 import {UserTest} from '../src/interfaces/User';
 import app from '../src/app';
+import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 
 describe('Testing user functions', () => {
 	// Connections
@@ -27,7 +28,7 @@ describe('Testing user functions', () => {
 	};
 
 	// User to be used in tests
-	let user: UserTest;
+	let user: LoginMessageResponse;
 
 	it('should register a user', async () => {
 		await registerUser(app, newUser);
