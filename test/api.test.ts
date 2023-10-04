@@ -27,7 +27,7 @@ describe('Testing user functions', () => {
 	const newUser: UserTest = {
 		username: username,
 		email: username + '@testeri.fi',
-		password: 'testo',
+		password: 'testo' + username,
 	};
 
 	// User to be used in tests
