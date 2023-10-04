@@ -39,7 +39,12 @@ const getUser = (url: string | Function): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.get('/graphql')
-			.end((err, res) => {
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+				`,
+			})
+			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
 				}
@@ -77,9 +82,7 @@ const loginUser = (url: string | Function, user: UserTest): Promise<UserTest> =>
 				if (err) {
 					reject(err);
 				}
-				console.log('Login info:', res.body.data.loginUser.user);
-
-				resolve(res.body.data.loginUser);
+				resolve(res.body.data.loginUser.user);
 			});
 	});
 };
