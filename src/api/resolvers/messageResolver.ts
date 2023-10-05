@@ -4,16 +4,13 @@ import {Message} from '../../interfaces/Message';
 import dotenv from 'dotenv';
 import {UserIdWithToken} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
+import userModel from '../models/userModel';
 dotenv.config();
 
 export default {
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
-			response.map((message: Message) => {
-				return message;
-			});
-
 			return response;
 		},
 		messageById: async (_parens: unknown, args: Message) => {
@@ -60,6 +57,7 @@ export default {
 			return deleteMessage;
 		},
 	},
+	/* Old using experimental fetch API
 	Message: {
 		sender: async (parent: Message) => {
 			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
@@ -70,6 +68,19 @@ export default {
 			}
 			const user = await response.json();
 			return user;
+		},
+	}, */
+	// New using mongoose, but returns user password
+	Message: {
+		sender: async (parent: Message) => {
+			try {
+				const response = await userModel.findById(parent.sender.toJSON());
+				return response;
+			} catch (error: any) {
+				throw new GraphQLError(error.statusText, {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
 		},
 	},
 };
