@@ -3,7 +3,7 @@ scalar Date
 type Chat {
 	id: ID!
 	created_date: Date!
-	users: [User!]!
+	users: [UserInfo!]!
 	messages: [Message]
 }
 
