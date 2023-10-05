@@ -41,7 +41,7 @@ export default {
 			if (!args.user.token) return null;
 			const chat: Chat = new chatModel({
 				created_date: args.chat.created_date,
-				users: [args.chat.users[0], args.chat.users[1]],
+				users: args.chat.users,
 				messages: [],
 			}) as Chat;
 			const createChat: Chat = (await chatModel.create(chat)) as Chat;
