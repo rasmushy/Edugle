@@ -1,6 +1,26 @@
+scalar Date
+
 type Message {
-    id: ID!
-    created_date: Date!
-    content: String!
-    sender: User!
+	id: ID!
+	date: Date!
+	content: String!
+	sender: User!
+}
+
+type Query {
+	messages: [Message]
+	messageById(id: ID!): Message
+	messagesBySender(sender: ID!): [Message]
+}
+
+input MessageInput {
+	date: Date!
+	content: String!
+	sender: ID!
+}
+
+type Mutation {
+	createMessage(message: MessageInput!, user: UserWithTokenInput!): Message
+	deleteMessage(id: ID!, user: UserWithTokenInput): Message
+	deleteMessageAsAdmin(id: ID!): Message
 }

@@ -1,8 +1,23 @@
 scalar Date
 
 type Chat {
-    id: ID!
-    created_date: Date!
-    users: [User!]!
-    messages: [Message]
+	id: ID!
+	created_date: Date!
+	users: [User]
+	messages: [Message]
+}
+
+input createChatInput {
+	created_date: Date!
+	users: [ID!]
+	messages: [MessageInput]
+}
+
+type Query {
+	chatByUser(user_id: ID!): Chat
+}
+
+type Mutation {
+	createChat(Chat: createChatInput): Chat
+	deleteChatAsAdmin(id: ID!): Chat
 }
