@@ -35,7 +35,6 @@ export default {
 
 				const users = await response.json();
 
-
 				return users;
 			} catch (error) {
 				if (error instanceof Error) {
