@@ -18,7 +18,7 @@ type Query {
 	# Returns a message by its id
 	messageById(id: ID!): Message
 	# Returns all messages sent by a user
-	messagesBySender(sender: ID!): [Message]
+	messagesBySender(id: ID!): [Message]
 }
 
 # Input for creating a message
