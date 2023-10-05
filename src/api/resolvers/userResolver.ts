@@ -1,9 +1,24 @@
 import {GraphQLError} from 'graphql';
+import {Message} from '../../interfaces/Message';
 import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 dotenv.config();
 
 export default {
+	/* Message: {
+		sender: async (parent: Message) => {
+			console.log('oon turha');
+
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender}`);
+			if (!response.ok) {
+				throw new GraphQLError(response.statusText, {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+			const user = await response.json();
+			return user;
+		},
+	}, */
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -20,12 +35,6 @@ export default {
 
 				const users = await response.json();
 
-				users.map((user: User) => {
-					user.id = user._id;
-					user.password = '********';
-					delete user._id;
-					return user;
-				});
 
 				return users;
 			} catch (error) {
@@ -44,9 +53,6 @@ export default {
 					});
 				}
 				const user = await response.json();
-				user.id = user._id;
-				delete user._id;
-				user.password = '********';
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -170,6 +176,11 @@ export default {
 						role: isAdmin.role.toLowerCase(), // add role from user object
 					},
 				});
+				if (!res.ok) {
+					throw new GraphQLError('User deletion failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
 				const userDeleted = await res.json();
 				return userDeleted;
 			} catch (error) {

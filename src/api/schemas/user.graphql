@@ -1,13 +1,23 @@
 type User {
-	id: ID!
-	username: String!
-	email: String!
-	password: String!
+	id: ID
+	username: String
+	email: String
+	password: String
 	description: String
 	avatar: String
 	lastLogin: Date
 	role: String
 }
+
+type UserInfo {
+	id: ID!
+	username: String
+	email: String
+	description: String
+	avatar: String
+	lastLogin: Date
+}
+
 type TokenMessage {
 	token: String
 	message: String!
@@ -31,6 +41,11 @@ input RegisterInput {
 input deleteUserAsAdminInput {
 	id: ID!
 	token: String!
+}
+
+input UserWithTokenInput {
+	token: String!
+	id: ID!
 }
 
 type Query {
