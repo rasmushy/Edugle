@@ -103,35 +103,39 @@ const messageBySender = async (url: string | Function, userId: string) => {
             .set('Content-type', 'application/json')
             .send({
                 query: `
-                query MessagesBySender($sender: ID!) {
-                    messagesBySender(sender: $sender) {
+                query MsgBySender($messagesBySenderId: ID!) {
+                  messagesBySender(id: $messagesBySenderId) {
+                    id
+                    date
+                    content
+                    sender {
                       id
-                      date
-                      content
-                      sender {
-                        id
-                        username
-                        email
-                        password
-                        description
-                        avatar
-                        lastLogin
-                        role
-                      }
+                      username
+                      email
+                      password
+                      description
+                      avatar
+                      lastLogin
+                      role
                     }
-                  } 
+                  }
+                }
             `,
                 variables: {
-                    sender: userId,
+                  messagesBySenderId: userId,
                 },
             })
             .expect(200, (err, res) => {
                 if (err) {
                     reject(err);
                 }
-                const message = res.body;
-                console.log('message', message)
-                resolve(message);
+                for (const message of res.body.data.messagesBySender) {
+                  expect(message).toHaveProperty('id');
+                  expect(message).toHaveProperty('date');
+                  expect(message).toHaveProperty('content');
+                  expect(message).toHaveProperty('sender');
+                }
+                resolve(res.body.data.messagesBySender);
             });
     });
 }
