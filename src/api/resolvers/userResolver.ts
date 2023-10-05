@@ -25,7 +25,7 @@ export default {
 	}, */
 	Subscription: {
 		hello: {
-			subscribe: () => pubsub.asyncIterator('asd'),
+			subscribe: () => pubsub.asyncIterator(['asd']),
 		},
 	},
 	Query: {
@@ -132,9 +132,15 @@ export default {
 						extensions: {code: 'VALIDATION_ERROR'},
 					});
 				}
-				const user: User = await response.json();
-				pubsub.publish('asd', {hello: user.email});
-				console.log(user);
+				const user = await response.json();
+				const pubUser = {
+					id: user.user.id,
+					email: user.user.email,
+					username: user.user.username,
+					password: user.user.password,
+				};
+				pubsub.publish('asd', {hello: pubUser});
+				console.log(pubUser);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {

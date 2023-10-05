@@ -38,9 +38,10 @@ input RegisterInput {
 	role: String
 }
 type asd {
-	username: String!
-	email: String!
-	password: String!
+	id: ID
+	username: String
+	email: String
+	password: String
 	description: String
 	avatar: String
 	role: String

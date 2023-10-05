@@ -8,16 +8,6 @@ import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
-	Subscription: {
-		hello: {
-			// Example using an async generator
-			subscribe: async function* () {
-				for await (const word of ['Hello', 'Bonjour', 'Ciao']) {
-					yield {hello: word};
-				}
-			},
-		},
-	},
 	Message: {
 		sender: async (parent: Message) => {
 			const response = await fetch(`${process.env.USERS_API}/users/${parent.sender}`);
