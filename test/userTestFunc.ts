@@ -38,20 +38,74 @@ const registerUser = (url: string | Function, user: UserTest): Promise<UserTest>
 	});
 };
 
-// TODO: Korjaa kun jonne korjaa backendin
-const getUser = (url: string | Function): Promise<UserTest[]> => {
+const getUsers = (url: string | Function, userdata: LoginMessageResponse): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
-			.get('/graphql')
+			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
+				query Users($token: String!) {
+					users(token: $token) {
+						id
+						username
+						email
+						password
+						description
+						avatar
+						lastLogin
+						role
+					}
+					}
 				`,
+				variables: {
+					token: userdata.token,
+				},
 			})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
 				}
+				for (const user of res.body.data.users) {
+					expect(user).toHaveProperty('username');
+					expect(user).toHaveProperty('email');
+				}
+				resolve(res.body);
+			});
+	});
+};
+
+const getUserById = (url: string | Function, id: String): Promise<UserTest[]> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+				query GetUserById($getUserByIdId: ID!) {
+					getUserById(id: $getUserByIdId) {
+						id
+						username
+						email
+						password
+						description
+						avatar
+						lastLogin
+						role
+					}
+					}
+				`,
+				variables: {
+					getUserByIdId: id,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				expect(res.body.data.getUserById).toHaveProperty('username');
+				expect(res.body.data.getUserById).toHaveProperty('email');
+				expect(res.body.data.getUserById).toHaveProperty('id');
 				resolve(res.body);
 			});
 	});
@@ -101,8 +155,8 @@ const deleteUser = (url: string | Function, userData: LoginMessageResponse): Pro
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation DelUser($deleteUserId: ID!, $token: String) {
-							deleteUser(id: $deleteUserId, token: $token) {
+				query: `mutation DelUser($token: String) {
+							deleteUser(token: $token) {
 								token
 								message
 								user {
@@ -118,7 +172,6 @@ const deleteUser = (url: string | Function, userData: LoginMessageResponse): Pro
 							}
 							}`,
 				variables: {
-					deleteUserId: userData.user.id,
 					token: userData.token,
 				},
 			})
@@ -134,4 +187,4 @@ const deleteUser = (url: string | Function, userData: LoginMessageResponse): Pro
 	});
 };
 
-export {registerUser, loginUser, deleteUser, getUser};
+export {registerUser, loginUser, deleteUser, getUsers, getUserById};

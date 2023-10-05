@@ -7,7 +7,7 @@ type User {
 	# Email of user
 	email: String!
 	# Password of user
-	password: String!
+	password: String
 	# Description of user
 	description: String
 	# Avatar of user
