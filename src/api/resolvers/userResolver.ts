@@ -25,9 +25,7 @@ export default {
 	}, */
 	Subscription: {
 		hello: {
-			subscribe: async () => {
-				return pubsub.asyncIterator(['asd']);
-			},
+			subscribe: () => pubsub.asyncIterator('asd'),
 		},
 	},
 	Query: {
@@ -135,7 +133,7 @@ export default {
 					});
 				}
 				const user: User = await response.json();
-				pubsub.publish('asd', {hello: user});
+				pubsub.publish('asd', {hello: user.email});
 				console.log(user);
 				return user;
 			} catch (error) {
