@@ -37,6 +37,14 @@ input RegisterInput {
 	avatar: String
 	role: String
 }
+type asd {
+	username: String!
+	email: String!
+	password: String!
+	description: String
+	avatar: String
+	role: String
+}
 
 input deleteUserAsAdminInput {
 	id: ID!
@@ -52,6 +60,10 @@ type Query {
 	users(token: String!): [User]
 	getUserById(id: ID!): User
 	validateToken: TokenMessage
+}
+
+type Subscription {
+	hello: asd
 }
 
 type Mutation {

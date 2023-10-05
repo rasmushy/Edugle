@@ -3,7 +3,11 @@ import {Message} from '../../interfaces/Message';
 import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 dotenv.config();
+import {PubSub} from 'graphql-subscriptions';
 
+const HENRI = 'henri';
+
+const pubsub = new PubSub();
 export default {
 	/* Message: {
 		sender: async (parent: Message) => {
@@ -19,6 +23,13 @@ export default {
 			return user;
 		},
 	}, */
+	Subscription: {
+		hello: {
+			subscribe: async () => {
+				return pubsub.asyncIterator(['asd']);
+			},
+		},
+	},
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -110,6 +121,7 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
+				console.log(`${process.env.AUTH_URL}/users`);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -123,6 +135,8 @@ export default {
 					});
 				}
 				const user: User = await response.json();
+				pubsub.publish('asd', {hello: user});
+				console.log(user);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {

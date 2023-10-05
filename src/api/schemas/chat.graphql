@@ -17,6 +17,10 @@ type Query {
 	chatByUser(user_id: ID!): Chat
 }
 
+type Subscription {
+	chatCreated: Chat
+}
+
 type Mutation {
 	createChat(Chat: createChatInput): Chat
 	deleteChatAsAdmin(id: ID!): Chat
