@@ -1,7 +1,7 @@
 import {GraphQLError} from 'graphql';
 import {Chat} from '../../interfaces/Chat';
 import {Message} from '../../interfaces/Message';
-import {UserIdWithToken} from '../../interfaces/User';
+import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 
 export default {
@@ -18,18 +18,25 @@ export default {
 		},
 	},
 	Query: {
+		chats: async () => {
+			const response = await chatModel.find({});
+			return response;
+		},
 		chatByUser: async (_parent: unknown, args: UserIdWithToken) => {
 			return await chatModel.find({users: args.id});
 		},
 	},
 	Mutation: {
-		createChat: async (_parent: unknown, args: Chat, user: UserIdWithToken) => {
-			if (!user.token) return null;
+		createChat: async (_parent: unknown, args: {chat: Chat; user: UserIdWithToken}) => {
+			console.log(args);
+			console.log(args.chat + 'mit vit');
+			if (!args.user.token) return null;
 			const chat: Chat = new chatModel({
-				created_date: args.created_date,
-				users: [user.id],
+				created_date: args.chat.created_date,
+				users: [args.chat.users[0], args.chat.users[1]],
 				messages: [],
 			}) as Chat;
+			console.log('vielä elossa');
 			const createChat: Chat = (await chatModel.create(chat)) as Chat;
 			if (!createChat) {
 				throw new GraphQLError('Failed to create chat', {
@@ -38,8 +45,8 @@ export default {
 			}
 			return createChat;
 		},
-		deleteChatAsAdmin: async (_parent: unknown, args: Chat, user: UserIdWithToken) => {
-			if (!user.token || user.role !== 'admin') {
+		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
+			if (!args.admin.token || args.admin.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});

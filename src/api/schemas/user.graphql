@@ -45,7 +45,13 @@ input deleteUserAsAdminInput {
 
 input UserWithTokenInput {
 	token: String!
-	id: ID!
+	id: ID
+}
+
+input AdminWithTokenInput {
+	token: String!
+	id: ID
+	role: String!
 }
 
 type Query {

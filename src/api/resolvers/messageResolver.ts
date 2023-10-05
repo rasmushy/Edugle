@@ -10,10 +10,6 @@ export default {
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
-			response.map((message: Message) => {
-				return message;
-			});
-
 			return response;
 		},
 		messageById: async (_parens: unknown, args: Message) => {

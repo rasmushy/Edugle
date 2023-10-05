@@ -3,21 +3,22 @@ scalar Date
 type Chat {
 	id: ID!
 	created_date: Date!
-	users: [User]
+	users: [User!]!
 	messages: [Message]
 }
 
-input createChatInput {
+input CreateChatInput {
 	created_date: Date!
-	users: [ID!]
+	users: [ID!]!
 	messages: [MessageInput]
 }
 
 type Query {
+	chats: [Chat]
 	chatByUser(user_id: ID!): Chat
 }
 
 type Mutation {
-	createChat(Chat: createChatInput): Chat
-	deleteChatAsAdmin(id: ID!): Chat
+	createChat(chat: CreateChatInput, user: UserWithTokenInput): Chat
+	deleteChatAsAdmin(id: ID!, admin: AdminWithTokenInput): Chat
 }
