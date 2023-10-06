@@ -3,13 +3,21 @@ import {GraphQLError} from 'graphql';
 import {Message} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
 import dotenv from 'dotenv';
-import {UserIdWithToken} from '../../interfaces/User';
+import {AdminIdWithToken, UserIdWithToken} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 dotenv.config();
+import {PubSub} from 'graphql-subscriptions';
+
+const pubsub = new PubSub();
 
 export default {
+	Subscription: {
+		messageCreated: {
+			subscribe: (_parent: unknown, arg: {chatId: string}) => pubsub.asyncIterator([arg.chatId]),
+		},
+	},
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
@@ -47,7 +55,16 @@ export default {
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
 			console.log('chat', chat);
 			chat.messages.push(createMessage.id);
+			chat.messages.push(createMessage.id);
 			await chat.save();
+			pubsub.publish(args.chat, {
+				messageCreated: {
+					id: createMessage.id,
+					created_date: Date.now(),
+					messages: chat.messages,
+					users: args.message.sender,
+				},
+			});
 			return createMessage;
 		},
 		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {
@@ -60,8 +77,8 @@ export default {
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
 			return deleteMessage;
 		},
-		deleteMessageAsAdmin: async (_parent: unknown, args: Message, user: UserIdWithToken) => {
-			if (!user.token || user.role !== 'admin') {
+		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; admin: AdminIdWithToken}) => {
+			if (!args.admin.token || args.admin.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
