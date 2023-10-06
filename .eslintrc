@@ -10,6 +10,7 @@
   "extends": "./node_modules/gts",
 	"plugins": ["import", "@typescript-eslint", "prettier"],
 	"rules": {
+		"printWidth": 160,
 		"comma-dangle": 0,
 		"no-underscore-dangle": 0,
 		"no-param-reassign": 0,

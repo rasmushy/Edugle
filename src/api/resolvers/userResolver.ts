@@ -66,8 +66,6 @@ export default {
 				}
 
 				const user = await response.json();
-				user.id = user._id;
-				delete user._id;
 				pubsub.publish('USER_CREATED', {userSub: user});
 				return user;
 			} catch (error) {
