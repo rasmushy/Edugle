@@ -35,5 +35,5 @@ type Mutation {
 	# Deletes a message corresponding to the given id and matching sender
 	deleteMessage(id: ID!, user: UserWithTokenInput): Message
 	# Deletes any message corresponding to the given id as an admin
-	deleteMessageAsAdmin(id: ID!): Message
+	deleteMessageAsAdmin(id: ID!, admin: AdminWithTokenInput): Message
 }

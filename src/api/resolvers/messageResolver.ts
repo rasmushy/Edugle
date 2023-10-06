@@ -3,7 +3,7 @@ import {GraphQLError} from 'graphql';
 import {Message} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
 import dotenv from 'dotenv';
-import {UserIdWithToken} from '../../interfaces/User';
+import {AdminIdWithToken, UserIdWithToken} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
@@ -52,8 +52,8 @@ export default {
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
 			return deleteMessage;
 		},
-		deleteMessageAsAdmin: async (_parent: unknown, args: Message, user: UserIdWithToken) => {
-			if (!user.token || user.role !== 'admin') {
+		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; admin: AdminIdWithToken}) => {
+			if (!args.admin.token || args.admin.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
