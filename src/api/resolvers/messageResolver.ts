@@ -1,10 +1,12 @@
 import {Types} from 'mongoose';
 import {GraphQLError} from 'graphql';
 import {Message} from '../../interfaces/Message';
+import {Chat} from '../../interfaces/Chat';
 import dotenv from 'dotenv';
 import {UserIdWithToken} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
+import chatModel from '../models/chatModel';
 dotenv.config();
 
 export default {
@@ -21,11 +23,11 @@ export default {
 		},
 	},
 	Mutation: {
-		createMessage: async (_parent: unknown, args: {message: Message; user: UserIdWithToken}) => {
+		createMessage: async (_parent: unknown, args: {chat: string; message: Message; user: UserIdWithToken}) => {
 			if (!args.user.token) return;
 			args.message.sender = args.user.id as unknown as Types.ObjectId;
 			const newMessage: Message = new messageModel({
-				date: args.message.date,
+				date: Date.now(),
 				content: args.message.content,
 				sender: args.message.sender,
 			}) as Message;
@@ -35,6 +37,9 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
+			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
+			chat.messages.push(createMessage._id);
+			await chat.save();
 			return createMessage;
 		},
 		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {

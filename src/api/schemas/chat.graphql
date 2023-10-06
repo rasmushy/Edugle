@@ -14,8 +14,6 @@ type Chat {
 
 # Input for creating a chat
 input CreateChatInput {
-	# Date the chat was created
-	created_date: Date!
 	# List of users about to chat
 	users: [ID!]!
 }
@@ -33,7 +31,7 @@ type Subscription {
 
 type Mutation {
 	# Creates a new chat
-	createChat(chat: CreateChatInput, user: UserWithTokenInput): Chat
+	createChat(chat: CreateChatInput): Chat
 	# Deletes a chat corresponding to the given id
 	deleteChatAsAdmin(id: ID!, admin: AdminWithTokenInput): Chat
 }
