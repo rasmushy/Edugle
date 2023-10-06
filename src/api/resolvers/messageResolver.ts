@@ -32,10 +32,6 @@ export default {
 	},
 	Mutation: {
 		createMessage: async (_parent: unknown, args: {chat: string; message: Message; user: UserIdWithToken}) => {
-			console.log(args.message.content);
-			console.log(args.user.token);
-			console.log(args.user.id);
-			console.log(args.chat);
 
 			if (!args.user.token) return;
 			args.message.sender = args.user.id as unknown as Types.ObjectId;
@@ -51,7 +47,6 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
-			console.log('mitä vittua', args.chat.toString());
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
 			console.log('chat', chat);
 			chat.messages.push(createMessage.id);
