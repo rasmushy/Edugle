@@ -3,6 +3,7 @@ import {Chat} from '../../interfaces/Chat';
 import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
+import messageModel from '../models/messageModel';
 
 import {PubSub} from 'graphql-subscriptions';
 
@@ -27,7 +28,7 @@ export default {
 		},
 		messages: async (parent: Chat) => {
 			try {
-				const response = await chatModel.find({_id: {$in: parent.messages}});
+				const response = await messageModel.find({_id: {$in: parent.messages}});
 				return response;
 			} catch (error: any) {
 				throw new GraphQLError(error.statusText, {
@@ -46,14 +47,15 @@ export default {
 		},
 	},
 	Mutation: {
-		createChat: async (_parent: unknown, args: {chat: Chat; user: UserIdWithToken}) => {
-			if (!args.user.token) return null;
-			const chat: Chat = new chatModel({
-				created_date: args.chat.created_date,
+		createChat: async (_parent: unknown, args: {chat: Chat}) => {
+			console.log(args.chat.users);
+			if (args.chat.users.length < 2) return null;
+			const newChat: Chat = new chatModel({
+				created_date: Date.now(),
 				users: args.chat.users,
 				messages: [],
 			}) as Chat;
-			const createChat: Chat = (await chatModel.create(chat)) as Chat;
+			const createChat: Chat = (await chatModel.create(newChat)) as Chat;
 			if (!createChat) {
 				throw new GraphQLError('Failed to create chat', {
 					extensions: {code: 'NOT_CREATED'},
