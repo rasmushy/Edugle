@@ -64,6 +64,7 @@ export default {
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
+			console.log('ligma')
 			if (!args.admin.token || args.admin.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},

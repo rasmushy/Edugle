@@ -9,9 +9,9 @@ interface Message extends Document {
 
 interface MessageTest {
 	id?: string;
-	date: Date;
-	content: string;
-	sender: Types.ObjectId | UserTest;
+	date?: Date;
+	content?: string;
+	sender?: Types.ObjectId | UserTest;
 }
 
 export {Message, MessageTest};

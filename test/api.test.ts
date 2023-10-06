@@ -69,6 +69,17 @@ describe('Testing backend functions', () => {
 		});
 	});
 
+	// Tests for chats
+
+	let chat: ChatTest;
+
+	describe('Testing chat functions', () => {
+		it('should create a chat', async () => {
+			chat = await createChat(app, userData, adminUserData,) as ChatTest;
+		});
+
+
+	});
 	// Tests for messages
 	
 	describe('Testing message functions', () => {
@@ -76,12 +87,11 @@ describe('Testing backend functions', () => {
 		it('should create a message', async () => {
 			// Test message we input
 			const message: MessageTest = {
-				date: new Date(),
 				content: 'test message',
 				sender: userData.user.id as unknown as mongoose.Types.ObjectId,
 			};
 			
-			testMessage = await createMessage(app, userData, message) as MessageTest;
+			testMessage = await createMessage(app, userData, message, chat.id as string) as MessageTest;
 		});
 		
 		it('should get a message by id', async () => {
@@ -98,22 +108,15 @@ describe('Testing backend functions', () => {
 
 	});
 
-	describe('Testing chat functions', () => {
-		let chat: ChatTest;
-		it('should create a chat', async () => {
-			chat = await createChat(app, userData, adminUserData) as ChatTest;
-		});
-		it('should delete a chat (as admin', async () => {
-			await deleteChat(app, adminUserData, chat);
-		});
 
-	});
-
-	// Deletion test ( For user )
+	// Deletion test ( For user and chat )
 
 	describe('User can be deleted', () => {
 		it('should delete a user', async () => {
 			await deleteUser(app, userData);
+		});
+		it('should delete a chat (as admin', async () => {
+			await deleteChat(app, adminUserData, chat);
 		});
 	});
 });

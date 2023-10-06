@@ -10,30 +10,52 @@ const createChat = async (url: string | Function, userData: LoginMessageResponse
             .set('Content-type', 'application/json')
             .send({
                 query: `
-            mutation CreateChat($chat: ChatInput!, $user: UserWithTokenInput!) {
-                createChat(chat: $chat, user: $user) {
-                  id
-              }
-              
+            mutation CreateChat($chat: CreateChatInput) {
+                        createChat(chat: $chat) {
+                            id
+                            created_date
+                            users {
+                            id
+                            username
+                            email
+                            description
+                            avatar
+                            lastLogin
+                            }
+                            messages {
+                            id
+                            date
+                            content
+                            sender {
+                                id
+                                username
+                                email
+                                password
+                                description
+                                avatar
+                                lastLogin
+                                role
+                            }
+                            }
+                        }
+                        }
+
             `,
                 variables: {
                     chat: {
-                        created_date: 1,
-                        users: userData.user.id
+                        users: [userData.user.id, userData2.user.id]
                     },
-                    user: {
-                        token: userData.token
-                    }
+
                     }
             })
             .expect(200, (err, res) => {
                 if (err) {
                     reject(err);
                 }
-                const chat = res.body;
-                console.log('chat', chat)
-                // expect(chat).toHaveProperty('id');
-                // expect(chat).toHaveProperty('date');
+                const chat = res.body.data.createChat;
+                expect(chat).toHaveProperty('id');
+                expect(chat).toHaveProperty('created_date');
+                expect(chat).toHaveProperty('users');
                 resolve(chat);
             });
     });
@@ -47,9 +69,34 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
             .send({
                 query: `
                     mutation DeleteChatAsAdmin($deleteChatAsAdminId: ID!, $admin: AdminWithTokenInput) {
-                    deleteChatAsAdmin(id: $deleteChatAsAdminId, admin: $admin) {
-                        id
-                    }
+                        deleteChatAsAdmin(id: $deleteChatAsAdminId, admin: $admin) {
+                            id
+                            created_date
+                            users {
+                            id
+                            username
+                            email
+                            description
+                            avatar
+                            lastLogin
+                            }
+                            messages {
+                            id
+                            date
+                            content
+                            sender {
+                                id
+                                username
+                                email
+                                password
+                                description
+                                avatar
+                                lastLogin
+                                role
+                            }
+                            }
+                        }
+                        }
             `,
                 variables: {
                 deleteChatAsAdminId: chat.id,
@@ -64,9 +111,11 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
                 if (err) {
                     reject(err);
                 }
-                const chat = res.body;
+                const chat = res.body.data;
                 console.log('chat', chat)
-                // expect(chat).toHaveProperty('message');
+                expect(chat).toHaveProperty('id');
+                expect(chat).toHaveProperty('created_date');
+                expect(chat).toHaveProperty('users');
                 resolve(chat);
             });
     });
