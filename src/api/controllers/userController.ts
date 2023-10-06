@@ -69,7 +69,6 @@ const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFun
 				password: newUser.password,
 			},
 		};
-
 		res.json(response);
 	} catch (error) {
 		next(new CustomError('User creation failed', 500));

@@ -5,20 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default {
-	/* Message: {
-		sender: async (parent: Message) => {
-			console.log('oon turha');
-
-			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender}`);
-			if (!response.ok) {
-				throw new GraphQLError(response.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
-			}
-			const user = await response.json();
-			return user;
-		},
-	}, */
+	
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -32,9 +19,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
-
 				const users = await response.json();
-
 				return users;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -108,6 +93,7 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
+				console.log(`${process.env.AUTH_URL}/users`);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -120,7 +106,13 @@ export default {
 						extensions: {code: 'VALIDATION_ERROR'},
 					});
 				}
-				const user: User = await response.json();
+				const user = await response.json();
+				const pubUser = {
+					id: user.user.id,
+					email: user.user.email,
+					username: user.user.username,
+					password: user.user.password,
+				};
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
