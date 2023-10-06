@@ -14,11 +14,13 @@ import {createRateLimitRule} from 'graphql-rate-limit';
 import {shield} from 'graphql-shield';
 import {applyMiddleware} from 'graphql-middleware';
 import {makeExecutableSchema} from '@graphql-tools/schema';
-import {PubSub} from 'graphql-subscriptions';
 import {createServer} from 'http';
 import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
+import {PubSub} from 'graphql-subscriptions';
+
+const pubsub = new PubSub();
 
 const app = express();
 const httpServer = createServer(app);
@@ -29,7 +31,6 @@ const wsServer = new WebSocketServer({
 	path: '/graphql',
 });
 
-console.log(httpServer.listen);
 (async () => {
 	try {
 		const rateLimitRule = createRateLimitRule({
@@ -86,12 +87,19 @@ console.log(httpServer.listen);
 				context: async ({req}) => authenticate(req),
 			}),
 		);
-		const PORT = 3000;
+		const PORT = process.env.WebSocket || 4000;
+
+		(async () => {
+			try {
+				httpServer.listen(PORT, () => {
+					console.log(`Server is now running on http://localhost:${PORT}/graphql`);
+				});
+			} catch (error) {
+				console.log('Server error', (error as Error).message);
+			}
+		})();
 		// Now that our HTTP server is fully set up, we can listen to it.
-		httpServer.listen(PORT, () => {
-			console.log(`Server is now running on http://localhost:${PORT}/graphql`);
-		});
-		app.use('/subscriptions', cors<cors.CorsRequest>(), express.json());
+		
 		app.use('/api', api);
 		app.use(notFound);
 		app.use(errorHandler);

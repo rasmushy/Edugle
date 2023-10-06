@@ -3,31 +3,9 @@ import {Message} from '../../interfaces/Message';
 import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 dotenv.config();
-import {PubSub} from 'graphql-subscriptions';
 
-const HENRI = 'henri';
-
-const pubsub = new PubSub();
 export default {
-	/* Message: {
-		sender: async (parent: Message) => {
-			console.log('oon turha');
-
-			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender}`);
-			if (!response.ok) {
-				throw new GraphQLError(response.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
-			}
-			const user = await response.json();
-			return user;
-		},
-	}, */
-	Subscription: {
-		hello: {
-			subscribe: () => pubsub.asyncIterator(['asd']),
-		},
-	},
+	
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -137,8 +115,6 @@ export default {
 					username: user.user.username,
 					password: user.user.password,
 				};
-				pubsub.publish('asd', {hello: pubUser});
-				console.log(pubUser);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {

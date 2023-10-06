@@ -13,6 +13,11 @@ import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
+	Subscription: {
+		messageCreated: {
+			subscribe: (_parent: unknown, arg: {chatId: string}) => pubsub.asyncIterator([arg.chatId]),
+		},
+	},
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
@@ -45,11 +50,12 @@ export default {
 			await chat.save();
 			pubsub.publish(args.chat, {
 				messageCreated: {
-					chat: args.chat,
-					message: createMessage,
+					id: createMessage.id,
+					created_date: Date.now(),
+					messages: chat.messages,
+					users: args.message.sender,
 				},
 			});
-			console.log(args.chat);
 			return createMessage;
 		},
 		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {

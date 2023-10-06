@@ -6,18 +6,10 @@ import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 
 import {PubSub} from 'graphql-subscriptions';
-
 const pubsub = new PubSub();
 
 export default {
-	Subscription: {
-		messageCreated: {
-			subscribe: (_parent: unknown, args: {chatId: any}) => pubsub.asyncIterator([args.chatId]),
-			resolve: (payload: any) => {
-				return payload;
-			}
-		},
-	},
+
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
@@ -51,7 +43,6 @@ export default {
 	},
 	Mutation: {
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
-			console.log(args.chat.users);
 			if (args.chat.users.length < 2) return null;
 			const newChat: Chat = new chatModel({
 				created_date: Date.now(),
@@ -64,8 +55,6 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
-			console.log(createChat);
-			
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {

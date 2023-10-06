@@ -29,6 +29,11 @@ input MessageInput {
 	sender: ID!
 }
 
+type Subscription {
+	messageCreated(chatId: ID!): Chat
+}
+
+
 type Mutation {
 	# Creates a message
 	createMessage(chat: ID!, message: MessageInput!, user: UserWithTokenInput!): Message
