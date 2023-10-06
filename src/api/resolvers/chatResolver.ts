@@ -5,7 +5,11 @@ import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 
+import {PubSub} from 'graphql-subscriptions';
+const pubsub = new PubSub();
+
 export default {
+
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
@@ -45,7 +49,6 @@ export default {
 	},
 	Mutation: {
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
-			console.log(args.chat.users);
 			if (args.chat.users.length < 2) return null;
 			const newChat: Chat = new chatModel({
 				created_date: Date.now(),
