@@ -99,12 +99,8 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
                         }
             `,
                 variables: {
-                deleteChatAsAdminId: chat.id,
-                    admin: {
-                        id: adminUserData.user.id,
-                        role: adminUserData.user.role,
-                        token: adminUserData.token
-                    }
+                    deleteChatAsAdminId: chat.id,
+                    token: adminUserData.token
                 }   
             })
             .expect(200, (err, res) => {

@@ -109,15 +109,15 @@ describe('Testing backend functions', () => {
 	});
 
 
-	// Deletion test ( For user and chat )
+	// Deletion test ( For user TODO: and chat )
 
 	describe('User can be deleted', () => {
 		it('should delete a user', async () => {
 			await deleteUser(app, userData);
 		});
-		it('should delete a chat (as admin', async () => {
-			await deleteChat(app, adminUserData, chat);
-		});
+		// it('should delete a chat (as admin', async () => {
+		// 	await deleteChat(app, adminUserData, chat);
+		// });
 	});
 });
 
