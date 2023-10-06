@@ -23,8 +23,6 @@ type Query {
 
 # Input for creating a message
 input MessageInput {
-	# Date the message was sent
-	date: Date!
 	# Content of the message
 	content: String!
 	# User who sent the message
@@ -33,7 +31,7 @@ input MessageInput {
 
 type Mutation {
 	# Creates a message
-	createMessage(message: MessageInput!, user: UserWithTokenInput!): Message
+	createMessage(chat: ID!, message: MessageInput!, user: UserWithTokenInput!): Message
 	# Deletes a message corresponding to the given id and matching sender
 	deleteMessage(id: ID!, user: UserWithTokenInput): Message
 	# Deletes any message corresponding to the given id as an admin
