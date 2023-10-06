@@ -12,7 +12,10 @@ const pubsub = new PubSub();
 export default {
 	Subscription: {
 		messageCreated: {
-			subscribe: (_parent: unknown, args: {chatId: string}) => pubsub.asyncIterator('messages'),
+			subscribe: (_parent: unknown, args: {chatId: any}) => pubsub.asyncIterator([args.chatId]),
+			resolve: (payload: any) => {
+				return payload;
+			}
 		},
 	},
 	Chat: {
@@ -62,14 +65,7 @@ export default {
 				});
 			}
 			console.log(createChat);
-			pubsub.publish('messages', {
-				messageCreated: {
-					id: createChat.id,
-					created_date: createChat.created_date,
-					users: createChat.users,
-					messages: createChat.messages,
-				},
-			});
+			
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {

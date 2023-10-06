@@ -8,6 +8,9 @@ import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 dotenv.config();
+import {PubSub} from 'graphql-subscriptions';
+
+const pubsub = new PubSub();
 
 export default {
 	Query: {
@@ -38,8 +41,15 @@ export default {
 				});
 			}
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
-			chat.messages.push(createMessage._id);
+			chat.messages.push(createMessage.id);
 			await chat.save();
+			pubsub.publish(args.chat, {
+				messageCreated: {
+					chat: args.chat,
+					message: createMessage,
+				},
+			});
+			console.log(args.chat);
 			return createMessage;
 		},
 		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {
