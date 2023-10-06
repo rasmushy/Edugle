@@ -9,6 +9,11 @@ import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
+	Subscription: {
+		messageCreated: {
+			subscribe: (_parent: unknown, args: {chatId: string}) => pubsub.asyncIterator('messages'),
+		},
+	},
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
@@ -54,6 +59,15 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
+			console.log(createChat);
+			pubsub.publish('messages', {
+				messageCreated: {
+					id: createChat.id,
+					created_date: createChat.created_date,
+					users: createChat.users,
+					messages: createChat.messages,
+				},
+			});
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
