@@ -83,11 +83,6 @@ console.log(httpServer.listen);
 			schema,
 			introspection: true,
 			plugins: [
-				/* 				process.env.NODE_ENV === 'production'
-					? ApolloServerPluginLandingPageProductionDefault({
-							embed: true as false,
-					  })
-					: ApolloServerPluginLandingPageLocalDefault(), */
 				ApolloServerPluginDrainHttpServer({httpServer}),
 				// Proper shutdown for the WebSocket server.
 				{
@@ -114,7 +109,7 @@ console.log(httpServer.listen);
 				context: async ({req}) => authenticate(req),
 			}),
 		);
-		const PORT = 3000;
+		const PORT = process.env.PORT || 3000;
 		// Now that our HTTP server is fully set up, we can listen to it.
 		httpServer.listen(PORT, () => {
 			console.log(`Server is now running on http://localhost:${PORT}/graphql`);
