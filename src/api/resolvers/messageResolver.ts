@@ -38,7 +38,7 @@ export default {
 				});
 			}
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
-			chat.messages.push(createMessage._id);
+			chat.messages.push(createMessage.id);
 			await chat.save();
 			return createMessage;
 		},
