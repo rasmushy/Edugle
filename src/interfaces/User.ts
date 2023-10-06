@@ -17,6 +17,12 @@ interface UserIdWithToken {
 	role: string;
 }
 
+interface AdminIdWithToken {
+	id: string;
+	token: string;
+	role: string;
+}
+
 interface OutputUser {
 	id: string;
 	username: string;
@@ -40,4 +46,4 @@ interface UserTest {
 	lastLogin?: Date;
 }
 
-export {User, UserIdWithToken, OutputUser, TokenUser, UserTest};
+export {User, UserIdWithToken, AdminIdWithToken, OutputUser, TokenUser, UserTest};

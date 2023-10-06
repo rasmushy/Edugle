@@ -61,8 +61,6 @@ export default {
 					});
 				}
 				const user = await response.json();
-				user.id = user._id;
-				delete user._id;
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {

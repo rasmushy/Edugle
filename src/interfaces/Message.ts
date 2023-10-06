@@ -1,5 +1,5 @@
 import {Types, Document} from 'mongoose';
-import {User} from './User';
+import {User, UserTest} from './User';
 
 interface Message extends Document {
 	date: Date;
@@ -7,4 +7,11 @@ interface Message extends Document {
 	sender: Types.ObjectId | User;
 }
 
-export {Message};
+interface MessageTest {
+	id?: string;
+	date: Date;
+	content: string;
+	sender: Types.ObjectId | UserTest;
+}
+
+export {Message, MessageTest};
