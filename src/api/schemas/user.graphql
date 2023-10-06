@@ -37,14 +37,6 @@ input RegisterInput {
 	avatar: String
 	role: String
 }
-type asd {
-	username: String!
-	email: String!
-	password: String!
-	description: String
-	avatar: String
-	role: String
-}
 
 input deleteUserAsAdminInput {
 	id: ID!
@@ -63,7 +55,7 @@ type Query {
 }
 
 type Subscription {
-	hello: asd
+	userSub: User
 }
 
 type Mutation {

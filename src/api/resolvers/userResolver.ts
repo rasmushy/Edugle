@@ -24,8 +24,12 @@ export default {
 		},
 	}, */
 	Subscription: {
-		hello: {
-			subscribe: () => pubsub.asyncIterator('asd'),
+		userSub: {
+			resolve: (payload: any) => {
+				console.log('payload', payload);
+				return payload.user;
+			},
+			subscribe: () => pubsub.asyncIterator('USER_CREATED'),
 		},
 	},
 	Query: {
@@ -60,9 +64,11 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const user = await response.json();
 				user.id = user._id;
 				delete user._id;
+				pubsub.publish('USER_CREATED', {userSub: user});
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -133,7 +139,7 @@ export default {
 					});
 				}
 				const user: User = await response.json();
-				pubsub.publish('asd', {hello: user.email});
+				pubsub.publish('USER_CREATED', {usersSub: user});
 				console.log(user);
 				return user;
 			} catch (error) {

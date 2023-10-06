@@ -6,7 +6,7 @@ import {expressMiddleware} from '@apollo/server/express4';
 import typeDefs from './api/schemas';
 import resolvers from './api/resolvers';
 import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
-import {ApolloServerPluginLandingPageProductionDefault, ApolloServerPluginLandingPageLocalDefault} from '@apollo/server/plugin/landingPage/default';
+//import {ApolloServerPlugin} from 'apollo-server-plugin-base';
 import {notFound, errorHandler} from './middlewares';
 import authenticate from './functions/authenticate';
 import {IContext} from './interfaces/IContext';
@@ -14,7 +14,6 @@ import {createRateLimitRule} from 'graphql-rate-limit';
 import {shield} from 'graphql-shield';
 import {applyMiddleware} from 'graphql-middleware';
 import {makeExecutableSchema} from '@graphql-tools/schema';
-import {PubSub} from 'graphql-subscriptions';
 import {createServer} from 'http';
 import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
@@ -26,9 +25,26 @@ app.use(express.json());
 
 const wsServer = new WebSocketServer({
 	server: httpServer,
-	path: '/graphql',
+	path: '/subscriptions',
 });
+/* const errorLogPlugin: ApolloServerPlugin = {
+	async requestDidStart() {
+		return {
+			didEncounterErrors: async ({errors}: any) => {
+				errors.forEach((error: any) => {
+					const {originalError} = error;
+					const {code} = originalError || {};
+					const level = code ? 'warn' : 'error';
+					const output = {
+						err: {...error, code, stack: error.stack},
+					};
 
+					console.log(`GRAPHQL_API_ERROR: ${error.message}`, output);
+				});
+			},
+		};
+	},
+}; */
 console.log(httpServer.listen);
 (async () => {
 	try {
@@ -50,17 +66,28 @@ console.log(httpServer.listen);
 			permissions,
 		);
 
-		const serverCleanup = useServer({schema}, wsServer);
+		const serverCleanup = useServer(
+			{
+				schema,
+				onConnect: (ctx) => {
+					console.log('client connected');
+				},
+				onSubscribe: (ctx, msg) => {
+					console.log('client subscribed');
+				},
+			},
+			wsServer,
+		);
 
 		const server = new ApolloServer<IContext>({
 			schema,
 			introspection: true,
 			plugins: [
-				process.env.NODE_ENV === 'production'
+				/* 				process.env.NODE_ENV === 'production'
 					? ApolloServerPluginLandingPageProductionDefault({
 							embed: true as false,
 					  })
-					: ApolloServerPluginLandingPageLocalDefault(),
+					: ApolloServerPluginLandingPageLocalDefault(), */
 				ApolloServerPluginDrainHttpServer({httpServer}),
 				// Proper shutdown for the WebSocket server.
 				{
@@ -76,12 +103,13 @@ console.log(httpServer.listen);
 
 			includeStacktraceInErrorResponses: false,
 		});
+
 		await server.start();
 
 		app.use(
 			'/graphql',
 			express.json(),
-			cors<cors.CorsRequest>(),
+			cors<cors.CorsRequest>({origin: 'http://localhost:3001', credentials: true}),
 			expressMiddleware(server, {
 				context: async ({req}) => authenticate(req),
 			}),
@@ -91,7 +119,6 @@ console.log(httpServer.listen);
 		httpServer.listen(PORT, () => {
 			console.log(`Server is now running on http://localhost:${PORT}/graphql`);
 		});
-		app.use('/subscriptions', cors<cors.CorsRequest>(), express.json());
 		app.use('/api', api);
 		app.use(notFound);
 		app.use(errorHandler);
