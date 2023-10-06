@@ -24,6 +24,11 @@ export default {
 	},
 	Mutation: {
 		createMessage: async (_parent: unknown, args: {chat: string; message: Message; user: UserIdWithToken}) => {
+			console.log(args.message.content);
+			console.log(args.user.token);
+			console.log(args.user.id);
+			console.log(args.chat);
+
 			if (!args.user.token) return;
 			args.message.sender = args.user.id as unknown as Types.ObjectId;
 			const newMessage: Message = new messageModel({
@@ -32,13 +37,16 @@ export default {
 				sender: args.message.sender,
 			}) as Message;
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
+			console.log('createMessage', createMessage);
 			if (!createMessage) {
 				throw new GraphQLError('Failed to create message', {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
+			console.log('mitä vittua', args.chat.toString());
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
-			chat.messages.push(createMessage._id);
+			console.log('chat', chat);
+			chat.messages.push(createMessage.id);
 			await chat.save();
 			return createMessage;
 		},
