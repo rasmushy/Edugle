@@ -48,6 +48,22 @@ export default {
 		},
 	},
 	Mutation: {
+		joinChat: async (_parent: unknown, args: {chatId: string; userId: string}) => {
+			
+		const chat = await chatModel.findById(args.chatId);
+
+		if (!chat) {
+			throw new GraphQLError('Chat not found', {
+				extensions: {code: 'NOT_FOUND'},
+			});
+		}
+
+		const user = await userModel.findById(args.userId);
+		
+		
+
+
+		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
 			if (args.chat.users.length < 2) return null;
 			const newChat: Chat = new chatModel({
