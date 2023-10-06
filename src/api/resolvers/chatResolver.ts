@@ -4,6 +4,7 @@ import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
+import authUser from '../../utils/auth';
 
 import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
@@ -47,7 +48,7 @@ export default {
 		},
 	},
 	Mutation: {
-		joinChat: async (_parent: unknown, args: {chatId: string; userId: string}) => {
+		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
 				throw new GraphQLError('Chat not found', {
@@ -55,7 +56,14 @@ export default {
 				});
 			}
 
-			const user = await userModel.findById(args.userId);
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+
+			const user = await userModel.findById(userId);
 
 			if (!user) {
 				throw new GraphQLError('User not found', {
@@ -63,7 +71,7 @@ export default {
 				});
 			}
 
-			const chatWithUser = await chatModel.findOne({users: {$all: [args.userId, args.chatId]}});
+			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
 
 			if (chatWithUser) {
 				throw new GraphQLError('User already in chat', {
