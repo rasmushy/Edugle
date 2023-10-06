@@ -49,15 +49,6 @@ input RegisterInput {
 	avatar: String
 	role: String
 }
-type asd {
-	id: ID
-	username: String
-	email: String
-	password: String
-	description: String
-	avatar: String
-	role: String
-}
 
 # User input for user deletion as admin
 input deleteUserAsAdminInput {
@@ -85,10 +76,6 @@ type Query {
 	getUserById(id: ID!): User
 	# Validates the given token
 	validateToken: TokenMessage
-}
-
-type Subscription {
-	hello: asd
 }
 
 type Mutation {

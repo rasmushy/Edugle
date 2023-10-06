@@ -25,10 +25,6 @@ type Query {
 	chatByUser(user_id: ID!): Chat
 }
 
-type Subscription {
-	messageCreated(chatId: ID!): Chat
-}
-
 type Mutation {
 	# Creates a new chat
 	createChat(chat: CreateChatInput): Chat
