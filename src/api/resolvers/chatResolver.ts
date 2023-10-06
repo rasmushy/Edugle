@@ -9,7 +9,6 @@ import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
-
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
@@ -48,8 +47,35 @@ export default {
 		},
 	},
 	Mutation: {
+		joinChat: async (_parent: unknown, args: {chatId: string; userId: string}) => {
+			const chat = await chatModel.findById(args.chatId);
+			if (!chat) {
+				throw new GraphQLError('Chat not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const user = await userModel.findById(args.userId);
+
+			if (!user) {
+				throw new GraphQLError('User not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const chatWithUser = await chatModel.findOne({users: {$all: [args.userId, args.chatId]}});
+
+			if (chatWithUser) {
+				throw new GraphQLError('User already in chat', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			chat.users.push(user);
+			const updatedChat = await chat.save();
+			return updatedChat;
+		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
-			if (args.chat.users.length < 2) return null;
 			const newChat: Chat = new chatModel({
 				created_date: Date.now(),
 				users: args.chat.users,
