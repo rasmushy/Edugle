@@ -54,10 +54,9 @@ export default {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
-			
+
 			const user = await userModel.findById(args.userId);
-			
-			console.log(user);
+
 			if (!user) {
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
