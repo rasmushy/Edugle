@@ -4,6 +4,9 @@ import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import {PubSub} from 'graphql-subscriptions';
+const pubsub = new PubSub();
+
 export default {
 	
 	Query: {

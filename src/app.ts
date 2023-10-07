@@ -18,9 +18,6 @@ import {createServer} from 'http';
 import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
-import {PubSub} from 'graphql-subscriptions';
-
-const pubsub = new PubSub();
 
 const app = express();
 const httpServer = createServer(app);
