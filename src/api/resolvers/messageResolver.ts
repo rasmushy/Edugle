@@ -60,7 +60,6 @@ export default {
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
 			console.log('chat', chat);
 			chat.messages.push(createMessage.id);
-			chat.messages.push(createMessage.id);
 			await chat.save();
 
 			pubsub.publish(args.chat, {

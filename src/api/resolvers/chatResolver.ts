@@ -40,8 +40,27 @@ export default {
 			const response = await chatModel.find({});
 			return response;
 		},
-		chatByUser: async (_parent: unknown, args: UserIdWithToken) => {
-			return await chatModel.find({users: args.id});
+		chatByUser: async (_parent: unknown, args: {token: string}) => {
+			console.log('args.token', args.token);
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+			const chats = await chatModel.find({users: userId});
+			const plainChats = chats.map((chat) => chat.toJSON() as Chat);
+			console.log(plainChats);
+			return plainChats[0];
+		},
+		chatById: async (_parent: unknown, args: {id: string}) => {
+			const response: Chat = (await chatModel.findById(args.id)) as Chat;
+			const newChat = {
+				...response.toJSON(),
+				users: response.users.map((user) => user._id),
+				messages: response.messages.map((message) => message._id),
+			};
+			return newChat;
 		},
 	},
 	Mutation: {
@@ -52,8 +71,10 @@ export default {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
+			console.log('args.token', args.token);
 
 			const userId = authUser(args.token);
+			console.log('userId', userId);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
@@ -62,6 +83,7 @@ export default {
 
 			const user = await userModel.findById(userId);
 
+			console.log('user', user);
 			if (!user) {
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
@@ -70,6 +92,7 @@ export default {
 
 			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
 
+			console.log('chatWithUser', chatWithUser);
 			if (chatWithUser) {
 				throw new GraphQLError('User already in chat', {
 					extensions: {code: 'NOT_FOUND'},
