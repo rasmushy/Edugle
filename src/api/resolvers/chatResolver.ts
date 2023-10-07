@@ -6,9 +6,6 @@ import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 import authUser from '../../utils/auth';
 
-import {PubSub} from 'graphql-subscriptions';
-const pubsub = new PubSub();
-
 export default {
 	Chat: {
 		users: async (parent: Chat) => {
