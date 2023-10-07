@@ -6,6 +6,11 @@ interface Message extends Document {
 	content: string;
 	sender: Types.ObjectId | User;
 }
+interface newMessage extends Document {
+	date: Date;
+	content: string;
+	senderToken: string;
+}
 
 interface MessageTest {
 	id?: string;
@@ -14,4 +19,4 @@ interface MessageTest {
 	sender: Types.ObjectId | UserTest;
 }
 
-export {Message, MessageTest};
+export {Message, newMessage, MessageTest};

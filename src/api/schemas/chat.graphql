@@ -26,6 +26,7 @@ type Query {
 }
 
 type Mutation {
+	joinChat(chatId: ID!, token: String!): Chat
 	# Creates a new chat
 	createChat(chat: CreateChatInput): Chat
 	# Deletes a chat corresponding to the given id

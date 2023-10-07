@@ -26,7 +26,7 @@ input MessageInput {
 	# Content of the message
 	content: String!
 	# User who sent the message
-	sender: ID!
+	senderToken: String!
 }
 
 type Subscription {
@@ -35,7 +35,7 @@ type Subscription {
 
 type Mutation {
 	# Creates a message
-	createMessage(chat: ID!, message: MessageInput!, user: UserWithTokenInput!): Message
+	createMessage(chat: ID!, message: MessageInput!): Message
 	# Deletes a message corresponding to the given id and matching sender
 	deleteMessage(id: ID!, user: UserWithTokenInput): Message
 	# Deletes any message corresponding to the given id as an admin

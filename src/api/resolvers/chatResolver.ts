@@ -4,12 +4,12 @@ import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
+import authUser from '../../utils/auth';
 
 import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
-
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
@@ -48,8 +48,42 @@ export default {
 		},
 	},
 	Mutation: {
+		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
+			const chat = await chatModel.findById(args.chatId);
+			if (!chat) {
+				throw new GraphQLError('Chat not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+
+			const user = await userModel.findById(userId);
+
+			if (!user) {
+				throw new GraphQLError('User not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
+
+			if (chatWithUser) {
+				throw new GraphQLError('User already in chat', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			chat.users.push(user);
+			const updatedChat = await chat.save();
+			return updatedChat;
+		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
-			if (args.chat.users.length < 2) return null;
 			const newChat: Chat = new chatModel({
 				created_date: Date.now(),
 				users: args.chat.users,
