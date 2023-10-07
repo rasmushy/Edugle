@@ -104,7 +104,7 @@ console.log(httpServer.listen);
 		app.use(
 			'/graphql',
 			express.json(),
-			cors<cors.CorsRequest>({origin: "http://localhost:3001", credentials: true}),
+			cors<cors.CorsRequest>(),
 			expressMiddleware(server, {
 				context: async ({req}) => authenticate(req),
 			}),
