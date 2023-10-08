@@ -2,6 +2,7 @@ import {GraphQLError} from 'graphql';
 import {Message} from '../../interfaces/Message';
 import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
+import authUser from '../../utils/auth';
 dotenv.config();
 
 export default {
@@ -37,6 +38,25 @@ export default {
 					});
 				}
 				const user = await response.json();
+				return user;
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('An unknown error occurred.');
+			}
+		},
+		getUserByToken: async (_parent: unknown, args: {token: string}) => {
+			try {
+				const userId = authUser(args.token);
+				const response = await fetch(`${process.env.AUTH_URL}/users/${userId}`);
+				if (!response.ok) {
+					throw new GraphQLError(`User with ID ${userId} not found`, {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const user = await response.json();
+				console.log(user);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
