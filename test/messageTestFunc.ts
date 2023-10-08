@@ -3,33 +3,33 @@ import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import mongoose, {mongo} from 'mongoose';
 
-const createMessage = async (url: string | Function, userData: LoginMessageResponse, testMessage: MessageTest) => {
+const createMessage = async (url: string | Function, userData: LoginMessageResponse, testMessage: MessageTest, chatId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-            mutation CreateMessage($message: MessageInput!, $user: UserWithTokenInput!) {
-                createMessage(message: $message, user: $user) {
+            mutation CreateMessage($user: UserWithTokenInput!, $message: MessageInput!, $chat: ID!) {
+              createMessage(user: $user, message: $message, chat: $chat) {
+                id
+                date
+                content
+                sender {
                   id
-                  date
-                  content
-                  sender {
-                    id
-                    username
-                    email
-                    password
-                    description
-                    avatar
-                    lastLogin
-                    role
-                  }
+                  username
+                  email
+                  password
+                  description
+                  avatar
+                  lastLogin
+                  role
                 }
               }
-              
+            }
             `,
 				variables: {
+          chat: chatId,
 					message: testMessage,
 					user: {
 						id: userData.user.id,

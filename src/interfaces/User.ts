@@ -28,6 +28,7 @@ interface OutputUser {
 	username: string;
 	email: string;
 	password: string;
+	description?: string;
 }
 
 interface TokenUser {

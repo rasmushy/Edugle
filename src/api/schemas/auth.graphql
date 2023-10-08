@@ -1,0 +1,15 @@
+scalar Date
+
+type AuthUser {
+  id: ID!
+  username: String!
+  email: String!
+  token: String!
+  role: String!
+}
+
+type Query {
+  checkToken(token: String!): AuthUser!
+  checkAdmin(token: String!): AuthUser!
+}
+

@@ -76,6 +76,7 @@ type Query {
 	getUserById(id: ID!): User
 	# Validates the given token
 	validateToken: TokenMessage
+	getUserByToken(token: String!): User
 }
 
 type Subscription {
