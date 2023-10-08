@@ -1,12 +1,11 @@
 import {GraphQLError} from 'graphql';
 import {Message} from '../../interfaces/Message';
-import {User, UserIdWithToken} from '../../interfaces/User';
+import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
 dotenv.config();
 
 export default {
-	
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -168,7 +167,8 @@ export default {
 		deleteUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; deleteUserID: String}) => {
 			try {
 				if (!args.user.token) return null;
-				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${args.user.id}`, {
+				const userId = authUser(args.user.token);
+				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
 					headers: {
 						Authorization: `Bearer ${args.user.token}`,
 					},
@@ -179,6 +179,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const res = await fetch(`${process.env.AUTH_URL}/users/${args.deleteUserID}`, {
 					method: 'DELETE',
 					headers: {
@@ -195,6 +196,46 @@ export default {
 				const userDeleted = await res.json();
 				return userDeleted;
 			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('An unknown error occurred.');
+			}
+		},
+		modifyUser: async (_parent: unknown, args: {user: UserIdWithToken; modifyUser: ModifyUser}) => {
+			try {
+				if (!args.user.token) return null;
+				const userId = authUser(args.user.token);
+				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
+					headers: {
+						Authorization: `Bearer ${args.user.token}`,
+					},
+				});
+				const isAdmin = await isUserAdmin.json();
+				if (isAdmin.role.toLowerCase() !== 'admin') {
+					throw new GraphQLError('User is not an admin', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				console.log(`${process.env.AUTH_URL}/users/${args.modifyUser.id}`);
+				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${args.user.token}`,
+						role: isAdmin.role.toLowerCase(), // add role from user object
+					},
+					body: JSON.stringify(args.modifyUser),
+				});
+				if (!res.ok) {
+					throw new GraphQLError('User modification failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const userModified = await res.json();
+				return userModified;
+			} catch (error) {
+				console.log(error);
 				if (error instanceof Error) {
 					throw new Error(error.message);
 				}
