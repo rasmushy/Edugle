@@ -108,7 +108,6 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
                     reject(err);
                 }
                 const chat = res.body.data;
-                console.log('chat', chat)
                 expect(chat).toHaveProperty('id');
                 expect(chat).toHaveProperty('created_date');
                 expect(chat).toHaveProperty('users');

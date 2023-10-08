@@ -112,7 +112,6 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
-				console.log(`${process.env.AUTH_URL}/users`);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -217,7 +216,6 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
-				console.log(`${process.env.AUTH_URL}/users/${args.modifyUser.id}`);
 				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
 					method: 'PUT',
 					headers: {
