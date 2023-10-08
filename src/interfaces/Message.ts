@@ -14,9 +14,9 @@ interface newMessage extends Document {
 
 interface MessageTest {
 	id?: string;
-	date: Date;
-	content: string;
-	sender: Types.ObjectId | UserTest;
+	date?: Date;
+	content?: string;
+	sender?: Types.ObjectId | UserTest;
 }
 
 export {Message, newMessage, MessageTest};

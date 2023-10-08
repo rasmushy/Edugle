@@ -8,5 +8,11 @@ interface Chat extends Document {
 	users: User[];
 	messages: Message[];
 }
+interface ChatTest extends Document {
+	id?: string;
+	created_date?: Date;
+	users?: User[];
+	messages?: Message[];
+}
 
-export {Chat};
+export {Chat, ChatTest};
