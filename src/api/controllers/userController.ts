@@ -76,9 +76,8 @@ const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFun
 	}
 };
 
-const userPut = async (req: Request, res: Response, next: NextFunction) => {
+const userPutAsAdmin = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-
 		const userFromToken: UserIdWithToken = res.locals?.user as UserIdWithToken;
 		if (userFromToken.role === undefined || !userFromToken.role.toLowerCase().includes('admin')) {
 			next(new CustomError('Unauthorized', 401));
@@ -87,10 +86,13 @@ const userPut = async (req: Request, res: Response, next: NextFunction) => {
 
 		const modifyUserID = req.body.id;
 
-		console.log(modifyUserID, "MODIFY USER ID");
-
 		if (modifyUserID === undefined) {
 			next(new CustomError('User not found', 404));
+			return;
+		}
+
+		if (modifyUserID === userFromToken.id) {
+			next(new CustomError('Cannot delete access from yourself', 401));
 			return;
 		}
 
@@ -177,20 +179,20 @@ const userDeleteAsAdmin = async (req: Request, res: Response, next: NextFunction
 	}
 };
 
-const userPutAsAdmin = async (req: Request, res: Response, next: NextFunction) => {
+const userPut = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const userId = req.params.id;
-		if (!res.locals.role.includes('admin')) {
-			next(new CustomError('Unauthorized', 401));
+		const userId = req.body.id;
+
+		if (userId === undefined || userId === '') {
+			next(new CustomError('User not found', 404));
 			return;
 		}
 
-		const user: User = req.body as User;
-		if (user.password) {
-			user.password = await bcrypt.hash(user.password, salt);
-		}
+		const user = {
+			description: req.body.description,
+		};
 
-		const result: User = (await userModel.findByIdAndUpdate(userId, user, {new: true}).select('-password -role')) as User;
+		const result: User = (await userModel.findByIdAndUpdate(userId, user, {new: true})) as User;
 		if (!result) {
 			next(new CustomError('User not found', 404));
 			return;
@@ -199,10 +201,10 @@ const userPutAsAdmin = async (req: Request, res: Response, next: NextFunction) =
 		const response: DBMessageResponse = {
 			message: 'User updated',
 			user: {
+				description: result.description,
 				username: result.username,
 				email: result.email,
 				id: result._id,
-				password: result.password,
 			},
 		};
 
@@ -237,6 +239,6 @@ const checkAdmin = async (req: Request, res: Response, next: NextFunction) => {
 	};
 
 	res.json(message);
-}
+};
 
 export {userPost, userPut, userDelete, check, userListGet, userGet, checkToken, userDeleteAsAdmin, userPutAsAdmin, checkAdmin};

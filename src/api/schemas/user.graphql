@@ -56,6 +56,13 @@ input deleteUserAsAdminInput {
 	token: String!
 }
 
+input modifyUserInput {
+	token: String!
+	username: String
+	description: String
+	avatar: String
+}
+
 input modifyUserAsAdminInput {
 	id: ID
 	token: String!
@@ -98,6 +105,8 @@ type Mutation {
 	deleteUser(token: String): TokenMessage
 	# Deletes user corresponding to the given id as admin
 	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
-
-	modifyUser(user: modifyUserAsAdminInput, modifyUser: ModifyUserWithTokenAndRoleInput): TokenMessage
+	# Modifies user corresponding to the given token
+	modifyUser(modifyUser: modifyUserInput): TokenMessage
+	# Modifies user corresponding to the given id as admin
+	modifyUserAsAdmin(user: modifyUserAsAdminInput, modifyUser: ModifyUserWithTokenAndRoleInput): TokenMessage
 }

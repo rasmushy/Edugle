@@ -1,15 +1,15 @@
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
-import { ChatTest } from '../src/interfaces/Chat';
+import {ChatTest} from '../src/interfaces/Chat';
 
 const createChat = async (url: string | Function, userData: LoginMessageResponse, userData2: LoginMessageResponse) => {
-    return new Promise((resolve, reject) => {
-        request(url)
-            .post('/graphql')
-            .set('Content-type', 'application/json')
-            .send({
-                query: `
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
             mutation CreateChat($chat: CreateChatInput) {
                         createChat(chat: $chat) {
                             id
@@ -41,33 +41,32 @@ const createChat = async (url: string | Function, userData: LoginMessageResponse
                         }
 
             `,
-                variables: {
-                    chat: {
-                        users: [userData.user.id, userData2.user.id]
-                    },
-
-                    }
-            })
-            .expect(200, (err, res) => {
-                if (err) {
-                    reject(err);
-                }
-                const chat = res.body.data.createChat;
-                expect(chat).toHaveProperty('id');
-                expect(chat).toHaveProperty('created_date');
-                expect(chat).toHaveProperty('users');
-                resolve(chat);
-            });
-    });
+				variables: {
+					chat: {
+						users: [userData.user.id, userData2.user.id],
+					},
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.createChat;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				resolve(chat);
+			});
+	});
 };
 
 const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest) => {
-    return new Promise((resolve, reject) => {
-        request(url)
-            .post('/graphql')
-            .set('Content-type', 'application/json')
-            .send({
-                query: `
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
                     mutation DeleteChatAsAdmin($deleteChatAsAdminId: ID!, $admin: AdminWithTokenInput) {
                         deleteChatAsAdmin(id: $deleteChatAsAdminId, admin: $admin) {
                             id
@@ -98,22 +97,22 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
                         }
                         }
             `,
-                variables: {
-                    deleteChatAsAdminId: chat.id,
-                    token: adminUserData.token
-                }   
-            })
-            .expect(200, (err, res) => {
-                if (err) {
-                    reject(err);
-                }
-                const chat = res.body.data;
-                expect(chat).toHaveProperty('id');
-                expect(chat).toHaveProperty('created_date');
-                expect(chat).toHaveProperty('users');
-                resolve(chat);
-            });
-    });
-}
+				variables: {
+					deleteChatAsAdminId: chat.id,
+					token: adminUserData.token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				resolve(chat);
+			});
+	});
+};
 
 export {createChat, deleteChat};

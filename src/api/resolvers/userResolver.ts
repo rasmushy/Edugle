@@ -55,7 +55,6 @@ export default {
 					});
 				}
 				const user = await response.json();
-				console.log(user);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -201,7 +200,40 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		modifyUser: async (_parent: unknown, args: {user: UserIdWithToken; modifyUser: ModifyUser}) => {
+		modifyUser: async (_parent: unknown, args: {modifyUser: UserIdWithToken}) => {
+			try {
+				if (!args.modifyUser.token) return null;
+				const userId = authUser(args.modifyUser.token);
+				if (!userId) {
+					throw new GraphQLError('Not authorized', {
+						extensions: {code: 'NOT_AUTHORIZED'},
+					});
+				}
+				args.modifyUser.id = userId;
+				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${args.modifyUser.token}`,
+					},
+					body: JSON.stringify(args.modifyUser),
+				});
+				if (!res.ok) {
+					throw new GraphQLError('User modification failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const userModified = await res.json();
+				return userModified;
+			} catch (error) {
+				console.log(error);
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('An unknown error occurred.');
+			}
+		},
+		modifyUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; modifyUser: ModifyUser}) => {
 			try {
 				if (!args.user.token) return null;
 				const userId = authUser(args.user.token);
@@ -216,7 +248,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
-				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
+				const res = await fetch(`${process.env.AUTH_URL}/users/${args.modifyUser.id}`, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
