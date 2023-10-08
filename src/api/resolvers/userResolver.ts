@@ -62,6 +62,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const userFromAuth = await response.json();
 				return userFromAuth;
 			} catch (error) {
