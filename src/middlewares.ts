@@ -1,7 +1,7 @@
 import {NextFunction, Request, Response} from 'express';
 import ErrorResponse from './interfaces/ErrorResponse';
 import jwt from 'jsonwebtoken';
-import {OutputUser, TokenUser} from './interfaces/User';
+import {OutputUser, TokenUser, User} from './interfaces/User';
 import userModel from './api/models/userModel';
 import CustomError from './classes/CustomError';
 
@@ -38,7 +38,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
 		const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as TokenUser;
 
-		const user = (await userModel.findById(userFromToken.id).select('-password, -role')) as OutputUser;
+		const user = (await userModel.findById(userFromToken.id).select('-password')) as User;
 
 		if (!user) {
 			next(new CustomError('Unauthorized', 401));
@@ -46,7 +46,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 		}
 
 		res.locals.user = user;
-		res.locals.role = userFromToken.role;
+		res.locals.role = user.role;
 
 		next();
 	} catch (error) {

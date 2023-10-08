@@ -67,6 +67,7 @@ const userPost = async (req: Request<{}, {}, User>, res: Response, next: NextFun
 				email: newUser.email,
 				id: newUser._id,
 				password: newUser.password,
+				description: newUser.description,
 			},
 		};
 		res.json(response);
@@ -211,4 +212,21 @@ const checkToken = async (req: Request, res: Response, next: NextFunction) => {
 	res.json(message);
 };
 
-export {userPost, userPut, userDelete, check, userListGet, userGet, checkToken, userDeleteAsAdmin, userPutAsAdmin};
+const checkAdmin = async (req: Request, res: Response, next: NextFunction) => {
+	const userId = res.locals.user.id;
+	if (!res.locals.role.toLowerCase().includes('admin')) {
+		next(new CustomError('Unauthorized', 401));
+		return;
+	}
+
+	const user: User = (await userModel.findById(userId)) as User;
+
+	const message: DBMessageResponse = {
+		message: 'User is admin',
+		user: user,
+	};
+
+	res.json(message);
+}
+
+export {userPost, userPut, userDelete, check, userListGet, userGet, checkToken, userDeleteAsAdmin, userPutAsAdmin, checkAdmin};

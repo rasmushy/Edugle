@@ -32,7 +32,7 @@ const loginPost = async (req: Request<{}, {}, {email: string; password: string}>
 			return;
 		}
 
-		const token = jwt.sign({id: user._id}, process.env.JWT_SECRET as string);
+		const token = jwt.sign({id: user._id}, process.env.JWT_SECRET as string, {expiresIn: '1h'});
 
 		const message: LoginMessageResponse = {
 			message: 'Login successful',
