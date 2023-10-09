@@ -7,6 +7,8 @@ type User {
 	avatar: String
 	lastLogin: Date
 	role: String
+	#likes
+	likes: Int
 }
 
 type UserInfo {
@@ -39,7 +41,19 @@ input RegisterInput {
 }
 
 input deleteUserAsAdminInput {
-	id: ID!
+	id: ID
+	token: String!
+}
+
+input modifyUserInput {
+	token: String!
+	username: String
+	description: String
+	avatar: String
+}
+
+input modifyUserAsAdminInput {
+	id: ID
 	token: String!
 }
 
@@ -48,6 +62,12 @@ input UserWithTokenInput {
 	id: ID
 }
 
+input ModifyUserWithTokenAndRoleInput {
+	id: ID!
+	role: String!
+}
+
+# Admin input when token, id and role are needed
 input AdminWithTokenInput {
 	token: String!
 	id: ID
@@ -82,5 +102,12 @@ type Mutation {
 	deleteUser(token: String): TokenMessage
 	# Deletes user corresponding to the given id as admin
 	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
+	# Add like to user
+	addLike(token: String, username: String!): Int
+	removeLike(token: String, username: String!): Int
+	# Modifies user corresponding to the given token
+	modifyUser(modifyUser: modifyUserInput): TokenMessage
+	# Modifies user corresponding to the given id as admin
+	modifyUserAsAdmin(user: modifyUserAsAdminInput, modifyUser: ModifyUserWithTokenAndRoleInput): TokenMessage
 	updateUserStatus(token: String, status: String): Boolean
 }
