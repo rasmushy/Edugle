@@ -187,4 +187,52 @@ const deleteUser = (url: string | Function, userData: LoginMessageResponse): Pro
 	});
 };
 
-export {registerUser, loginUser, deleteUser, getUsers, getUserById};
+const likeUser = (url: string | Function, token: string, username: string): Promise<DBMessageResponse> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `mutation LikeUser($username: String!, $token: String) {
+						addLike(username: $username, token: $token)
+						}`,
+				variables: {
+					token: token,
+					username: username,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+			expect(res.body.data.addLike).toBe(1)
+				resolve(res.body.data);
+			});
+	});
+}
+
+const dislikeUser = (url: string | Function, token: string, username: string): Promise<DBMessageResponse> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+		.post('/graphql')
+		.set('Content-type', 'application/json')
+		.send({
+			query: `mutation DislikeUser($username: String!, $token: String) {
+					removeLike(username: $username, token: $token)
+					}`,
+			variables: {
+				token: token,
+				username: username,
+			},
+		})
+		.expect(200, (err, res) => {
+			if (err) {
+				reject(err);
+			}
+			expect(res.body.data.removeLike).toBe(0)
+			resolve(res.body.data.removeLike);
+		})
+	});
+}
+
+export {registerUser, loginUser, deleteUser, getUsers, getUserById, likeUser, dislikeUser};

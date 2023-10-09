@@ -1,8 +1,9 @@
 import {GraphQLError} from 'graphql';
-import {Message} from '../../interfaces/Message';
 import {User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
+import userModel from '../models/userModel';
+import { JsonWebTokenError } from 'jsonwebtoken';
 dotenv.config();
 
 export default {
@@ -199,6 +200,61 @@ export default {
 					throw new Error(error.message);
 				}
 				throw new Error('An unknown error occurred.');
+			}
+		},
+		addLike: async (_parent: unknown, args: {token: string; username: string}) => {
+			try {
+				const response = await fetch(`${process.env.AUTH_URL}/users/token`, {
+					headers: {
+						Authorization: `Bearer ${args.token}`,
+					},
+				});
+				if (!response.ok) {
+					throw new JsonWebTokenError('Token validation failed');
+				}
+				
+				const authUser = await response.json();
+				if (authUser.user.username === args.username) {
+					throw new Error("Liking yourself is not allowed");
+				}
+				// Add like to given username
+				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$inc: {likes: 1}});
+				if (!user) {
+					throw new Error('Failed to add like');
+				}
+				return user.likes + 1;
+			} catch (error) {
+				if (error instanceof Error) {
+					return error;
+				}
+				throw new Error('An error occurred.');
+			}
+		},
+		removeLike: async (_parent: unknown, args: {token: string; username: string}) => {
+			try {
+				const response = await fetch(`${process.env.AUTH_URL}/users/token`, {
+					headers: {
+						Authorization: `Bearer ${args.token}`,
+					},
+				});
+				if (!response.ok) {
+					throw new JsonWebTokenError('Token validation failed');
+				}
+				
+				const authUser = await response.json();
+				if (authUser.user.username === args.username) {
+					throw new Error("Why would you unlike yourself?");
+				}
+				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$dec: {likes: 1}});
+				if (!user) {
+					throw new Error('Failed to add like');
+				}
+				return user.likes - 1;
+			} catch (error) {
+				if (error instanceof Error) {
+					return error;
+				}
+				throw new Error('An error occurred.');
 			}
 		},
 	},
