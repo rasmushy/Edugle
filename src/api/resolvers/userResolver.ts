@@ -1,6 +1,5 @@
 import {GraphQLError} from 'graphql';
 import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
-import userModel from '../models/userModel';
 import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
