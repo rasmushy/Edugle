@@ -11,8 +11,8 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-            mutation CreateMessage($message: MessageInput!, $chat: ID!) {
-              createMessage(message: $message, chat: $chat) {
+            mutation CreateMessage($message: MessageInput!, $chatId: ID!) {
+              createMessage(message: $message, chatId: $chatId) {
                 id
                 date
                 content
@@ -30,7 +30,7 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
             }
             `,
 				variables: {
-					chat: chatId,
+					chatId: chatId,
 					message: {
 						content: 'test message',
 						senderToken: userData.token,
@@ -60,26 +60,27 @@ const messageById = async (url: string | Function, messageId: string) => {
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-            query MessageById($messageByIdId: ID!) {
-                messageById(id: $messageByIdId) {
-                  id
-                  date
-                  content
-                  sender {
-                    id
-                    username
-                    email
-                    password
-                    description
-                    avatar
-                    lastLogin
-                    role
-                  }
-                }
-              }
+							query Query($messageId: ID!) {
+								messageById(messageId: $messageId) {
+									content
+									date
+									id
+									sender {
+										avatar
+										description
+										email
+										id
+										lastLogin
+										likes
+										password
+										role
+										username
+									}
+								}
+							}
             `,
 				variables: {
-					messageByIdId: messageId,
+					messageId: messageId,
 				},
 			})
 			.expect(200, (err, res) => {
@@ -103,8 +104,8 @@ const messageBySenderId = async (url: string | Function, userId: string) => {
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-							query Query($messagesBySenderIdId: ID!) {
-								messagesBySenderId(id: $messagesBySenderIdId) {
+							query Query($userId: ID!) {
+								messagesBySenderId(userId: $userId) {
 									content
 									date
 									id
@@ -123,7 +124,7 @@ const messageBySenderId = async (url: string | Function, userId: string) => {
 							}
             `,
 				variables: {
-					messagesBySenderIdId: userId,
+					userId: userId,
 				},
 			})
 			.expect(200, (err, res) => {
@@ -148,8 +149,8 @@ const deleteMessage = async (url: string | Function, userData: LoginMessageRespo
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-							mutation Mutation($deleteMessageId: ID!, $userToken: String!) {
-								deleteMessage(id: $deleteMessageId, userToken: $userToken) {
+							mutation Mutation($messageId: ID!, $userToken: String!) {
+								deleteMessage(messageId: $messageId, userToken: $userToken) {
 									content
 									date
 									id
@@ -168,7 +169,7 @@ const deleteMessage = async (url: string | Function, userData: LoginMessageRespo
 							}
             `,
 				variables: {
-					deleteMessageId: messageId as unknown as mongoose.Types.ObjectId,
+					messageId: messageId as unknown as mongoose.Types.ObjectId,
 					userToken: userData.token,
 				},
 			})

@@ -25,21 +25,21 @@ export default {
 			const response = await messageModel.find({});
 			return response;
 		},
-		messageById: async (_parent: unknown, args: Message) => {
-			return await messageModel.findById(args.id);
+		messageById: async (_parent: unknown, args: {messageId: string}) => {
+			return await messageModel.findById(args.messageId);
 		},
-		messagesBySenderToken: async (_parent: unknown, args: {token: string}) => {
-			const messages = await messageModel.find({sender: authUser(args.token)});
+		messagesBySenderToken: async (_parent: unknown, args: {userToken: string}) => {
+			const messages = await messageModel.find({sender: authUser(args.userToken)});
 			return messages;
 		},
-		messagesBySenderId: async (_parent: unknown, args: {id: string}) => {
-			const messages = await messageModel.find({sender: args.id});
+		messagesBySenderId: async (_parent: unknown, args: {userId: string}) => {
+			const messages = await messageModel.find({sender: args.userId});
 			return messages;
 		},
 	},
 
 	Mutation: {
-		createMessage: async (_parent: unknown, args: {chat: string; message: newMessage}) => {
+		createMessage: async (_parent: unknown, args: {chatId: string; message: newMessage}) => {
 			if (!args.message.senderToken) return;
 			const userId = authUser(args.message.senderToken);
 			if (!userId) {
@@ -58,11 +58,11 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
-			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
+			const chat: Chat = (await chatModel.findById(args.chatId)) as Chat;
 			chat.messages.push(createMessage.id);
 			await chat.save();
 
-			pubsub.publish(args.chat, {
+			pubsub.publish(args.chatId, {
 				messageCreated: {
 					id: createMessage.id,
 					created_date: Date.now(),
@@ -73,37 +73,37 @@ export default {
 			return createMessage;
 		},
 
-		deleteMessage: async (_parent: unknown, args: {id: string; userToken: string}) => {
-			const message: Message = (await messageModel.findById(args.id)) as Message;
+		deleteMessage: async (_parent: unknown, args: {messageId: string; userToken: string}) => {
+			const message: Message = (await messageModel.findById(args.messageId)) as Message;
 			if (!args.userToken || message.sender.toString() !== authUser(args.userToken)) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
-			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
+			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
 		},
 
-		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; userToken: string | null}) => {
+		deleteMessageAsAdmin: async (_parent: unknown, args: {messageId: string; userToken: string | null}) => {
 			const userToken = args.userToken;
 			if (!userToken) {
 				throw new GraphQLError('No toke', {
-					extensions: { code: 'NO_TOKEN' },
+					extensions: {code: 'NO_TOKEN'},
 				});
 			}
 			const userId = authUser(userToken);
 			if (!userId) {
 				throw new GraphQLError('Token conversion failed', {
-					extensions: { code: 'FAILED_TO_CONVERT' },
+					extensions: {code: 'FAILED_TO_CONVERT'},
 				});
 			}
 			const user = await userModel.findById(userId);
 			if (!user || user.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
-					extensions: { code: 'NOT_AUTHORIZED' },
+					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
-			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
+			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
 		},
 	},

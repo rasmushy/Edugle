@@ -16,11 +16,11 @@ type Query {
 	# Returns all messages in the database
 	messages: [Message]
 	# Returns a message by its id
-	messageById(id: ID!): Message
+	messageById(messageId: ID!): Message
 	# Returns all messages sent by a user
-	messagesBySenderToken(token: String!): [Message]
+	messagesBySenderToken(userToken: String!): [Message]
 	# Returns all messages sent by a user
-	messagesBySenderId(id: ID!): [Message]
+	messagesBySenderId(userId: ID!): [Message]
 }
 
 # Input for creating a message
@@ -37,9 +37,9 @@ type Subscription {
 
 type Mutation {
 	# Creates a message
-	createMessage(chat: ID!, message: MessageInput!): Message
+	createMessage(chatId: ID!, message: MessageInput!): Message
 	# Deletes a message corresponding to the given id and matching sender
-	deleteMessage(id: ID!, userToken: String!): Message
+	deleteMessage(messageId: ID!, userToken: String!): Message
 	# Deletes any message corresponding to the given id as an admin
-	deleteMessageAsAdmin(id: ID!, userToken: String!): Message
+	deleteMessageAsAdmin(messageId: ID!, userToken: String!): Message
 }
