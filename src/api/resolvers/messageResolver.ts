@@ -4,6 +4,7 @@ import {Message, newMessage} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
 import dotenv from 'dotenv';
 import {AdminIdWithToken, UserIdWithToken} from '../../interfaces/User';
+import {User} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
@@ -19,17 +20,21 @@ export default {
 			subscribe: (_parent: unknown, arg: {chatId: string}) => pubsub.asyncIterator([arg.chatId]),
 		},
 	},
-	
 	Query: {
 		messages: async () => {
 			const response = await messageModel.find({});
 			return response;
 		},
-		messageById: async (_parens: unknown, args: Message) => {
+		messageById: async (_parent: unknown, args: Message) => {
 			return await messageModel.findById(args.id);
 		},
-		messagesBySender: async (_parent: unknown, args: UserIdWithToken) => {
-			return await messageModel.find({sender: args.id});
+		messagesBySenderToken: async (_parent: unknown, args: {token: string}) => {
+			const messages = await messageModel.find({sender: authUser(args.token)});
+			return messages;
+		},
+		messagesBySenderId: async (_parent: unknown, args: {id: string}) => {
+			const messages = await messageModel.find({sender: args.id});
+			return messages;
 		},
 	},
 
@@ -42,13 +47,11 @@ export default {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
-
 			const newMessage: Message = new messageModel({
 				date: Date.now(),
 				content: args.message.content,
 				sender: userId,
 			}) as Message;
-
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
 			console.log('createMessage', createMessage);
 			if (!createMessage) {
@@ -56,7 +59,6 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
-
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
 			console.log('chat', chat);
 			chat.messages.push(createMessage.id);
@@ -73,9 +75,9 @@ export default {
 			return createMessage;
 		},
 
-		deleteMessage: async (_parent: unknown, args: {id: String; user: UserIdWithToken}) => {
+		deleteMessage: async (_parent: unknown, args: {id: string; userToken: string}) => {
 			const message: Message = (await messageModel.findById(args.id)) as Message;
-			if (!args.user.token || message.sender.toString() !== args.user.id) {
+			if (!args.userToken || message.sender.toString() !== authUser(args.userToken)) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
@@ -84,10 +86,23 @@ export default {
 			return deleteMessage;
 		},
 
-		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; admin: AdminIdWithToken}) => {
-			if (!args.admin.token || args.admin.role !== 'admin') {
+		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; userToken: string | null}) => {
+			const userToken = args.userToken;
+			if (!userToken) {
+				throw new GraphQLError('No toke', {
+					extensions: { code: 'NO_TOKEN' },
+				});
+			}
+			const userId = authUser(userToken);
+			if (!userId) {
+				throw new GraphQLError('Token conversion failed', {
+					extensions: { code: 'FAILED_TO_CONVERT' },
+				});
+			}
+			const user = await userModel.findById(userId);
+			if (!user || user.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
+					extensions: { code: 'NOT_AUTHORIZED' },
 				});
 			}
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
