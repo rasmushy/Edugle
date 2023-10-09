@@ -5,6 +5,8 @@ import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 import authUser from '../../utils/auth';
+import {PubSub} from 'graphql-subscriptions';
+const pubsub = new PubSub();
 
 export default {
 	Chat: {
@@ -115,10 +117,11 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
+			pubsub.publish('NEW_CHAT_STARTED', {newChatStarted: createChat});
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
-			console.log('ligma')
+			console.log('ligma');
 			if (!args.admin.token || args.admin.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},

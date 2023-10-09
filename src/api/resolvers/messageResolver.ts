@@ -93,21 +93,7 @@ export default {
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
 			return deleteMessage;
 		},
-	},
-	/* Old using experimental fetch API
-	Message: {
-		sender: async (parent: Message) => {
-			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
-			if (!response.ok) {
-				throw new GraphQLError(response.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
-			}
-			const user = await response.json();
-			return user;
-		},
-	}, */
-	// New using mongoose, but returns user password
+	},	
 	Message: {
 		sender: async (parent: Message) => {
 			try {

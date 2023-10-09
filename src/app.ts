@@ -6,7 +6,6 @@ import {expressMiddleware} from '@apollo/server/express4';
 import typeDefs from './api/schemas';
 import resolvers from './api/resolvers';
 import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
-//import {ApolloServerPlugin} from 'apollo-server-plugin-base';
 import {notFound, errorHandler} from './middlewares';
 import authenticate from './functions/authenticate';
 import {IContext} from './interfaces/IContext';
@@ -19,6 +18,7 @@ import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
 
+
 const app = express();
 const httpServer = createServer(app);
 app.use(express.json());
@@ -27,25 +27,7 @@ const wsServer = new WebSocketServer({
 	server: httpServer,
 	path: '/subscriptions',
 });
-/* const errorLogPlugin: ApolloServerPlugin = {
-	async requestDidStart() {
-		return {
-			didEncounterErrors: async ({errors}: any) => {
-				errors.forEach((error: any) => {
-					const {originalError} = error;
-					const {code} = originalError || {};
-					const level = code ? 'warn' : 'error';
-					const output = {
-						err: {...error, code, stack: error.stack},
-					};
 
-					console.log(`GRAPHQL_API_ERROR: ${error.message}`, output);
-				});
-			},
-		};
-	},
-}; */
-console.log(httpServer.listen);
 (async () => {
 	try {
 		const rateLimitRule = createRateLimitRule({
@@ -95,7 +77,10 @@ console.log(httpServer.listen);
 					},
 				},
 			],
-
+			formatError: (formattedError, data) => {
+				console.log(formattedError);
+				return formattedError;
+			},
 			includeStacktraceInErrorResponses: false,
 		});
 
@@ -104,7 +89,7 @@ console.log(httpServer.listen);
 		app.use(
 			'/graphql',
 			express.json(),
-			cors<cors.CorsRequest>({origin: process.env.FRONTEND_URL, credentials: true}),
+			cors<cors.CorsRequest>(),
 			expressMiddleware(server, {
 				context: async ({req}) => authenticate(req),
 			}),
