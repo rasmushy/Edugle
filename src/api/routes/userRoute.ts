@@ -1,5 +1,16 @@
 import express from 'express';
-import {check, checkToken, userDelete, userGet, userListGet, userPost, userPut, userDeleteAsAdmin, userPutAsAdmin, checkAdmin} from '../controllers/userController';
+import {
+	check,
+	checkToken,
+	userDelete,
+	userGet,
+	userListGet,
+	userPost,
+	userPut,
+	userDeleteAsAdmin,
+	userPutAsAdmin,
+	checkAdmin,
+} from '../controllers/userController';
 import {authenticate} from '../../middlewares';
 
 const router = express.Router();

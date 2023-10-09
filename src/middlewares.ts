@@ -46,7 +46,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 		}
 
 		res.locals.user = user;
-		res.locals.role = user.role;
 
 		next();
 	} catch (error) {
