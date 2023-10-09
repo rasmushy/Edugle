@@ -24,12 +24,14 @@ export default {
 		messages: async (parent: Chat) => {
 			if (parent.messages.length < 1) return [];
 			try {
+				console.log('tulin tänne');
 				const response = await messageModel.find({_id: {$in: parent.messages}});
 				const foundIds = response.map((message) => message._id.toString());
 				const missingIds = parent.messages.filter((id) => !foundIds.includes(id.toString()));
 				if (missingIds.length > 0) {
 					await chatModel.updateOne({_id: parent._id}, {$pullAll: {messages: missingIds}});
 				}
+				console.log('tulin tänne2');
 				return response;
 			} catch (error: any) {
 				throw new GraphQLError(error.statusText, {

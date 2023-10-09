@@ -18,7 +18,9 @@ type Query {
 	# Returns a message by its id
 	messageById(id: ID!): Message
 	# Returns all messages sent by a user
-	messagesBySender(id: ID!): [Message]
+	messagesBySenderToken(token: String!): [Message]
+	# Returns all messages sent by a user
+	messagesBySenderId(id: ID!): [Message]
 }
 
 # Input for creating a message
@@ -37,7 +39,7 @@ type Mutation {
 	# Creates a message
 	createMessage(chat: ID!, message: MessageInput!): Message
 	# Deletes a message corresponding to the given id and matching sender
-	deleteMessage(id: ID!, user: UserWithTokenInput): Message
+	deleteMessage(id: ID!, userToken: String!): Message
 	# Deletes any message corresponding to the given id as an admin
-	deleteMessageAsAdmin(id: ID!, admin: AdminWithTokenInput): Message
+	deleteMessageAsAdmin(id: ID!, userToken: String!): Message
 }
