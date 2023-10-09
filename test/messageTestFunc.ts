@@ -2,41 +2,41 @@ import request from 'supertest';
 import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import mongoose, {mongo} from 'mongoose';
+import { ChatTest } from '../src/interfaces/Chat';
 
-const createMessage = async (url: string | Function, userData: LoginMessageResponse, testMessage: MessageTest) => {
+const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-            mutation CreateMessage($message: MessageInput!, $user: UserWithTokenInput!) {
-                createMessage(message: $message, user: $user) {
+            mutation CreateMessage($message: MessageInput!, $chat: ID!) {
+              createMessage(message: $message, chat: $chat) {
+                id
+                date
+                content
+                sender {
                   id
-                  date
-                  content
-                  sender {
-                    id
-                    username
-                    email
-                    password
-                    description
-                    avatar
-                    lastLogin
-                    role
-                  }
+                  username
+                  email
+                  password
+                  description
+                  avatar
+                  lastLogin
+                  role
                 }
               }
-              
+            }
             `,
 				variables: {
-					message: testMessage,
-					user: {
-						id: userData.user.id,
-						token: userData.token,
+          chat: chatId,
+					message:{
+            content: "test message",
+            senderToken: userData.token,
+            } 
 					},
-				},
-			})
+				})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
@@ -46,7 +46,7 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
 				expect(message).toHaveProperty('date');
 				expect(message).toHaveProperty('content');
 				expect(message).toHaveProperty('sender');
-				expect(message.content).toBe(testMessage.content);
+				expect(message.content).toBe("test message");
 				expect(message.sender.id).toBe(userData.user.id);
 				resolve(message);
 			});
