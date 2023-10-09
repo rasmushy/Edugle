@@ -9,6 +9,7 @@ interface User extends Document {
 	avatar?: string;
 	role: string;
 	lastLogin: Date;
+	likes: number;
 }
 
 interface UserIdWithToken {
@@ -51,6 +52,8 @@ interface UserTest {
 	avatar?: string;
 	role?: string;
 	lastLogin?: Date;
+	likes?: number;
+
 }
 
 export {User, UserIdWithToken, AdminIdWithToken, OutputUser, TokenUser, UserTest, ModifyUser};

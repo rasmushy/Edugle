@@ -2,16 +2,17 @@ import request from 'supertest';
 import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import mongoose, {mongo} from 'mongoose';
+import { ChatTest } from '../src/interfaces/Chat';
 
-const createMessage = async (url: string | Function, userData: LoginMessageResponse, testMessage: MessageTest, chatId: string) => {
+const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-            mutation CreateMessage($user: UserWithTokenInput!, $message: MessageInput!, $chat: ID!) {
-              createMessage(user: $user, message: $message, chat: $chat) {
+            mutation CreateMessage($message: MessageInput!, $chat: ID!) {
+              createMessage(message: $message, chat: $chat) {
                 id
                 date
                 content
@@ -30,13 +31,12 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
             `,
 				variables: {
           chat: chatId,
-					message: testMessage,
-					user: {
-						id: userData.user.id,
-						token: userData.token,
+					message:{
+            content: "test message",
+            senderToken: userData.token,
+            } 
 					},
-				},
-			})
+				})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
@@ -46,7 +46,7 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
 				expect(message).toHaveProperty('date');
 				expect(message).toHaveProperty('content');
 				expect(message).toHaveProperty('sender');
-				expect(message.content).toBe(testMessage.content);
+				expect(message.content).toBe("test message");
 				expect(message.sender.id).toBe(userData.user.id);
 				resolve(message);
 			});

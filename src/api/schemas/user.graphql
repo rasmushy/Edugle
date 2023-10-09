@@ -16,6 +16,8 @@ type User {
 	lastLogin: Date
 	# Role of user
 	role: String
+	#likes
+	likes: Int
 }
 
 # User without password and role
@@ -105,6 +107,9 @@ type Mutation {
 	deleteUser(token: String): TokenMessage
 	# Deletes user corresponding to the given id as admin
 	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
+	# Add like to user
+	addLike(token: String, username: String!): Int
+	removeLike(token: String, username: String!): Int
 	# Modifies user corresponding to the given token
 	modifyUser(modifyUser: modifyUserInput): TokenMessage
 	# Modifies user corresponding to the given id as admin

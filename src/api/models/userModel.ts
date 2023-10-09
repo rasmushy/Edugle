@@ -28,6 +28,10 @@ const messageModel = new mongoose.Schema<User>({
 		type: String,
 		default: 'user',
 	},
+	likes: {
+		type: Number,
+		default: 0,
+	},
 });
 
 messageModel.set('toJSON', {

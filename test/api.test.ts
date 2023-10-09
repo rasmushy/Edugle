@@ -1,4 +1,4 @@
-import mongoose, {mongo} from 'mongoose';
+import mongoose from 'mongoose';
 import app from '../src/app';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 
@@ -7,7 +7,7 @@ import {UserTest} from '../src/interfaces/User';
 import {MessageTest} from '../src/interfaces/Message';
 
 // Test functions
-import {registerUser, loginUser, deleteUser, getUsers, getUserById} from './userTestFunc';
+import {registerUser, loginUser, deleteUser, getUsers, getUserById, likeUser, dislikeUser} from './userTestFunc';
 import {createMessage, deleteMessage, messageById, messageBySender} from './messageTestFunc';
 import {createChat, deleteChat} from './chatTestFunc';
 import { ChatTest } from '../src/interfaces/Chat';
@@ -67,6 +67,13 @@ describe('Testing backend functions', () => {
 		it('should get a user by id', async () => {
 			await getUserById(app, userData.user.id);
 		});
+		it('should be able to like another user', async () => {
+			await likeUser(app, adminUserData.token as string, userData.user.username);
+		});
+		it('should be able to dislike another user', async () => {
+			await dislikeUser(app, adminUserData.token as string, userData.user.username);
+		});
+
 	});
 
 	// Tests for chats
@@ -75,7 +82,7 @@ describe('Testing backend functions', () => {
 
 	describe('Testing chat functions', () => {
 		it('should create a chat', async () => {
-			chat = await createChat(app, userData, adminUserData,) as ChatTest;
+			chat = await createChat(app, userData, adminUserData) as ChatTest;
 		});
 
 
@@ -86,12 +93,8 @@ describe('Testing backend functions', () => {
 		let testMessage : MessageTest;
 		it('should create a message', async () => {
 			// Test message we input
-			const message: MessageTest = {
-				content: 'test message',
-				sender: userData.user.id as unknown as mongoose.Types.ObjectId,
-			};
 			
-			testMessage = await createMessage(app, userData, message, chat.id as string) as MessageTest;
+			testMessage = await createMessage(app, userData, chat.id as string) as MessageTest;
 		});
 		
 		it('should get a message by id', async () => {
