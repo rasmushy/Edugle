@@ -54,7 +54,19 @@ input RegisterInput {
 
 # User input for user deletion as admin
 input deleteUserAsAdminInput {
-	id: ID!
+	id: ID
+	token: String!
+}
+
+input modifyUserInput {
+	token: String!
+	username: String
+	description: String
+	avatar: String
+}
+
+input modifyUserAsAdminInput {
+	id: ID
 	token: String!
 }
 
@@ -62,6 +74,11 @@ input deleteUserAsAdminInput {
 input UserWithTokenInput {
 	token: String!
 	id: ID
+}
+
+input ModifyUserWithTokenAndRoleInput {
+	id: ID!
+	role: String!
 }
 
 # Admin input when token, id and role are needed
@@ -93,4 +110,8 @@ type Mutation {
 	# Add like to user
 	addLike(token: String, username: String!): Int
 	removeLike(token: String, username: String!): Int
+	# Modifies user corresponding to the given token
+	modifyUser(modifyUser: modifyUserInput): TokenMessage
+	# Modifies user corresponding to the given id as admin
+	modifyUserAsAdmin(user: modifyUserAsAdminInput, modifyUser: ModifyUserWithTokenAndRoleInput): TokenMessage
 }

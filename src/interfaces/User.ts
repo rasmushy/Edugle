@@ -18,6 +18,11 @@ interface UserIdWithToken {
 	role: string;
 }
 
+interface ModifyUser {
+	id: string;
+	role: string;
+}
+
 interface AdminIdWithToken {
 	id: string;
 	token: string;
@@ -28,8 +33,9 @@ interface OutputUser {
 	id: string;
 	username: string;
 	email: string;
-	password: string;
+	password?: string;
 	description?: string;
+	role?: string;
 }
 
 interface TokenUser {
@@ -50,4 +56,4 @@ interface UserTest {
 
 }
 
-export {User, UserIdWithToken, AdminIdWithToken, OutputUser, TokenUser, UserTest};
+export {User, UserIdWithToken, AdminIdWithToken, OutputUser, TokenUser, UserTest, ModifyUser};

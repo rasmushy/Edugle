@@ -1,5 +1,5 @@
 import {GraphQLError} from 'graphql';
-import {User, UserIdWithToken} from '../../interfaces/User';
+import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
 import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
@@ -7,7 +7,6 @@ import { JsonWebTokenError } from 'jsonwebtoken';
 dotenv.config();
 
 export default {
-	
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
@@ -57,7 +56,6 @@ export default {
 					});
 				}
 				const user = await response.json();
-				console.log(user);
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -114,7 +112,6 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
-				console.log(`${process.env.AUTH_URL}/users`);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -169,7 +166,8 @@ export default {
 		deleteUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; deleteUserID: String}) => {
 			try {
 				if (!args.user.token) return null;
-				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${args.user.id}`, {
+				const userId = authUser(args.user.token);
+				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
 					headers: {
 						Authorization: `Bearer ${args.user.token}`,
 					},
@@ -180,6 +178,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const res = await fetch(`${process.env.AUTH_URL}/users/${args.deleteUserID}`, {
 					method: 'DELETE',
 					headers: {
@@ -255,6 +254,78 @@ export default {
 					return error;
 				}
 				throw new Error('An error occurred.');
+			}
+		},
+		modifyUser: async (_parent: unknown, args: {modifyUser: UserIdWithToken}) => {
+			try {
+				if (!args.modifyUser.token) return null;
+				const userId = authUser(args.modifyUser.token);
+				if (!userId) {
+					throw new GraphQLError('Not authorized', {
+						extensions: {code: 'NOT_AUTHORIZED'},
+					});
+				}
+				args.modifyUser.id = userId;
+				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${args.modifyUser.token}`,
+					},
+					body: JSON.stringify(args.modifyUser),
+				});
+				if (!res.ok) {
+					throw new GraphQLError('User modification failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const userModified = await res.json();
+				return userModified;
+			} catch (error) {
+				console.log(error);
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('An unknown error occurred.');
+			}
+		},
+		modifyUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; modifyUser: ModifyUser}) => {
+			try {
+				if (!args.user.token) return null;
+				const userId = authUser(args.user.token);
+				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
+					headers: {
+						Authorization: `Bearer ${args.user.token}`,
+					},
+				});
+				const isAdmin = await isUserAdmin.json();
+				if (isAdmin.role.toLowerCase() !== 'admin') {
+					throw new GraphQLError('User is not an admin', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const res = await fetch(`${process.env.AUTH_URL}/users/${args.modifyUser.id}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${args.user.token}`,
+						role: isAdmin.role.toLowerCase(), // add role from user object
+					},
+					body: JSON.stringify(args.modifyUser),
+				});
+				if (!res.ok) {
+					throw new GraphQLError('User modification failed', {
+						extensions: {code: 'NOT_FOUND'},
+					});
+				}
+				const userModified = await res.json();
+				return userModified;
+			} catch (error) {
+				console.log(error);
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('An unknown error occurred.');
 			}
 		},
 	},
