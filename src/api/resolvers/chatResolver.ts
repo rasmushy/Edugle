@@ -68,6 +68,30 @@ export default {
 		},
 	},
 	Mutation: {
+		leaveChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
+			const chat = await chatModel.findById(args.chatId);
+			console.log('leaveChat: chat=', chat);
+			if (!chat) {
+				throw new GraphQLError('Chat not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const userId = authUser(args.token);
+			console.log('leaveChat: userId=', userId);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+
+			chat.users = chat.users.filter((user) => user._id.toString() !== userId);
+			const updatedChat = await chat.save();
+			console.log('leaveChat: updatedChat=', updatedChat);
+			pubsub.publish('CHAT_ENDED', {chatEnded: updatedChat});
+			return updatedChat;
+		},
+
 		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
@@ -75,10 +99,9 @@ export default {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
-			console.log('args.token', args.token);
 
 			const userId = authUser(args.token);
-			console.log('userId', userId);
+			console.log('joinChat: userId=', userId);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
@@ -87,7 +110,7 @@ export default {
 
 			const user = await userModel.findById(userId);
 
-			console.log('user', user);
+			console.log('joinChat: user=', user);
 			if (!user) {
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
@@ -96,7 +119,7 @@ export default {
 
 			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
 
-			console.log('chatWithUser', chatWithUser);
+			console.log('joinChat: chatWithUser=', chatWithUser);
 			if (chatWithUser) {
 				throw new GraphQLError('User already in chat', {
 					extensions: {code: 'NOT_FOUND'},
@@ -105,6 +128,7 @@ export default {
 
 			chat.users.push(user);
 			const updatedChat = await chat.save();
+			console.log('updatedChat users', updatedChat.users);
 			return updatedChat;
 		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
@@ -130,6 +154,11 @@ export default {
 			}
 			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.id)) as Chat;
 			return deleteChat;
+		},
+	},
+	Subscription: {
+		chatEnded: {
+			subscribe: () => pubsub.asyncIterator('CHAT_ENDED'),
 		},
 	},
 };

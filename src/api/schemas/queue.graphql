@@ -32,7 +32,7 @@ type Mutation {
 
 type Subscription {
 	queuePositionUpdated(userId: ID!): Int
-	userJoinedQueue: QueueEntry
-	userLeftQueue: QueueEntry
-	newChatStarted: Chat
+	userJoinedQueue(token: String!): QueueEntry
+	userLeftQueue(token: String!): QueueEntry
+	chatStarted: Chat
 }

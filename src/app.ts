@@ -37,6 +37,7 @@ const wsServer = new WebSocketServer({
 		const permissions = shield({
 			Mutation: {
 				loginUser: rateLimitRule({window: '1s', max: 5}),
+				initiateChat: rateLimitRule({window: '1s', max: 5}),
 			},
 		});
 
@@ -94,7 +95,7 @@ const wsServer = new WebSocketServer({
 				context: async ({req}) => authenticate(req),
 			}),
 		);
-		const PORT = process.env.PORT || 3000;
+		const PORT = process.env.PORT || 4000;
 		// Now that our HTTP server is fully set up, we can listen to it.
 		httpServer.listen(PORT, () => {
 			console.log(`Server is now running on http://localhost:${PORT}/graphql`);
