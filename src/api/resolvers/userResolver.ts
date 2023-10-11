@@ -1,10 +1,8 @@
 import {GraphQLError} from 'graphql';
 import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
-import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
 import {JsonWebTokenError} from 'jsonwebtoken';
-dotenv.config();
 
 import {PubSub, withFilter} from 'graphql-subscriptions';
 const pubsub = new PubSub();

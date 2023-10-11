@@ -16,4 +16,5 @@ export interface IUserInputDTO {
 export interface IUserIdWithToken {
 	id: string;
 	token: string;
+	role: string;
 }

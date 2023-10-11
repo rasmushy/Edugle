@@ -18,7 +18,6 @@ import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
 
-
 const app = express();
 const httpServer = createServer(app);
 app.use(express.json());
@@ -86,15 +85,17 @@ const wsServer = new WebSocketServer({
 		});
 
 		await server.start();
-
 		app.use(
 			'/graphql',
 			express.json(),
 			cors<cors.CorsRequest>(),
 			expressMiddleware(server, {
-				context: async ({req}) => authenticate(req),
+				context: async ({req, res}) => {
+					return {req: authenticate(req), res: res};
+				},
 			}),
 		);
+
 		const PORT = process.env.PORT || 4000;
 		// Now that our HTTP server is fully set up, we can listen to it.
 		httpServer.listen(PORT, () => {

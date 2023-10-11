@@ -2,8 +2,10 @@ import {NextFunction, Request, Response} from 'express';
 import ErrorResponse from './interfaces/ErrorResponse';
 import jwt from 'jsonwebtoken';
 import {OutputUser, TokenUser, User} from './interfaces/User';
+import {GraphQLError} from 'graphql';
 import userModel from './api/models/userModel';
 import CustomError from './classes/CustomError';
+import {getCookie, hasCookie} from 'cookies-next';
 
 export function notFound(req: Request, res: Response, next: NextFunction) {
 	res.status(404);
@@ -24,31 +26,39 @@ export function errorHandler(err: Error, req: Request, res: Response<ErrorRespon
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const bearer = req.headers.authorization;
-		if (!bearer) {
-			next(new CustomError('Unauthorized', 401));
-			return;
-		}
-
-		const token = bearer.split(' ')[1];
-
+		const token = bearer?.split(' ')[1];
 		if (!token) {
-			next(new CustomError('Unauthorized', 401));
-			return;
+			throw new GraphQLError('Token is missing in headers.authorization', {
+				extensions: {
+					code: 'AUTHENTICATION_ERROR',
+					http: {status: 401},
+				},
+			});
 		}
 
 		const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as TokenUser;
-
 		const user = (await userModel.findById(userFromToken.id).select('-password')) as User;
 
 		if (!user) {
-			next(new CustomError('Unauthorized', 401));
-			return;
+			throw new GraphQLError('User not found', {
+				extensions: {
+					code: 'USER_NOT_FOUND',
+					http: {status: 401},
+				},
+			});
 		}
 
 		res.locals.user = user;
 
 		next();
 	} catch (error) {
-		next(new CustomError('Unauthorized', 401));
+		next(
+			new GraphQLError('User not authenticated', {
+				extensions: {
+					code: 'AUTHENTICATION_ERROR',
+					http: {status: 401},
+				},
+			}),
+		);
 	}
 };
