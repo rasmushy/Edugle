@@ -6,7 +6,6 @@ import {expressMiddleware} from '@apollo/server/express4';
 import typeDefs from './api/schemas';
 import resolvers from './api/resolvers';
 import {ApolloServerPluginDrainHttpServer} from '@apollo/server/plugin/drainHttpServer';
-import {ApolloServerPluginLandingPageProductionDefault, ApolloServerPluginLandingPageLocalDefault} from '@apollo/server/plugin/landingPage/default';
 import {notFound, errorHandler} from './middlewares';
 import authenticate from './functions/authenticate';
 import {IContext} from './interfaces/IContext';
@@ -18,9 +17,7 @@ import {createServer} from 'http';
 import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
-import {PubSub} from 'graphql-subscriptions';
 
-const pubsub = new PubSub();
 
 const app = express();
 const httpServer = createServer(app);
@@ -28,7 +25,7 @@ app.use(express.json());
 
 const wsServer = new WebSocketServer({
 	server: httpServer,
-	path: '/graphql',
+	path: '/subscriptions',
 });
 
 (async () => {
@@ -51,17 +48,23 @@ const wsServer = new WebSocketServer({
 			permissions,
 		);
 
-		const serverCleanup = useServer({schema}, wsServer);
+		const serverCleanup = useServer(
+			{
+				schema,
+				onConnect: (ctx) => {
+					console.log('client connected');
+				},
+				onSubscribe: (ctx, msg) => {
+					console.log('client subscribed');
+				},
+			},
+			wsServer,
+		);
 
 		const server = new ApolloServer<IContext>({
 			schema,
 			introspection: true,
 			plugins: [
-				process.env.NODE_ENV === 'production'
-					? ApolloServerPluginLandingPageProductionDefault({
-							embed: true as false,
-					  })
-					: ApolloServerPluginLandingPageLocalDefault(),
 				ApolloServerPluginDrainHttpServer({httpServer}),
 				// Proper shutdown for the WebSocket server.
 				{
@@ -74,9 +77,13 @@ const wsServer = new WebSocketServer({
 					},
 				},
 			],
-
+			formatError: (formattedError, data) => {
+				console.log(formattedError);
+				return formattedError;
+			},
 			includeStacktraceInErrorResponses: false,
 		});
+
 		await server.start();
 
 		app.use(
@@ -87,19 +94,11 @@ const wsServer = new WebSocketServer({
 				context: async ({req}) => authenticate(req),
 			}),
 		);
-		const PORT = process.env.WebSocket || 4000;
-
-		(async () => {
-			try {
-				httpServer.listen(PORT, () => {
-					console.log(`Server is now running on http://localhost:${PORT}/graphql`);
-				});
-			} catch (error) {
-				console.log('Server error', (error as Error).message);
-			}
-		})();
+		const PORT = process.env.PORT || 3000;
 		// Now that our HTTP server is fully set up, we can listen to it.
-		
+		httpServer.listen(PORT, () => {
+			console.log(`Server is now running on http://localhost:${PORT}/graphql`);
+		});
 		app.use('/api', api);
 		app.use(notFound);
 		app.use(errorHandler);

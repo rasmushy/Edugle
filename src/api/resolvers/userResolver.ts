@@ -6,6 +6,9 @@ import userModel from '../models/userModel';
 import { JsonWebTokenError } from 'jsonwebtoken';
 dotenv.config();
 
+import {PubSub} from 'graphql-subscriptions';
+const pubsub = new PubSub();
+
 export default {
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
@@ -37,7 +40,9 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const user = await response.json();
+				pubsub.publish('USER_CREATED', {userSub: user});
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -76,6 +81,7 @@ export default {
 						extensions: {code: 'NOT_FOUND'},
 					});
 				}
+
 				const userFromAuth = await response.json();
 				return userFromAuth;
 			} catch (error) {
@@ -125,12 +131,6 @@ export default {
 					});
 				}
 				const user = await response.json();
-				const pubUser = {
-					id: user.user.id,
-					email: user.user.email,
-					username: user.user.username,
-					password: user.user.password,
-				};
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -327,6 +327,25 @@ export default {
 				}
 				throw new Error('An unknown error occurred.');
 			}
+		},
+		updateUserStatus: async (_parent: unknown, args: {token: string; status: string}) => {
+			const userId = authUser(args.token);
+			const user = await userModel.findByIdAndUpdate(userId, {status: args.status});
+			if (!user) {
+				throw new GraphQLError('User status update failed', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			pubsub.publish('USER_ONLINE_STATUS', {userOnlineStatus: {userId: userId, isOnline: args.status}});
+			return true; // or the updated user
+		},
+	},
+	Subscription: {
+		userOnlineStatus: {
+			subscribe: () => {
+				return pubsub.asyncIterator(['USER_ONLINE_STATUS']);
+			},
 		},
 	},
 };
