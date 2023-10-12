@@ -17,9 +17,7 @@ export default async (req: Request) => {
 
 	const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
 		id: string;
-		role: string;
 	};
-	console.log('userFromToken=', userFromToken);
 
 	if (!userFromToken) {
 		throw new GraphQLError('User is not authenticated', {
@@ -33,7 +31,6 @@ export default async (req: Request) => {
 	const user: IUserIdWithToken = {
 		id: userFromToken.id,
 		token,
-		role: userFromToken.role,
 	};
 
 	return user;

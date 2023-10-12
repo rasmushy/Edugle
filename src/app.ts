@@ -51,18 +51,20 @@ const wsServer = new WebSocketServer({
 		const serverCleanup = useServer(
 			{
 				schema,
-				onConnect: (ctx) => {
+				onConnect: async (ctx) => {
 					console.log('client connected');
 				},
 				onSubscribe: (ctx, msg) => {
 					console.log('client subscribed');
 				},
 				onDisconnect: (ctx, code, reason) => {
-					console.log('client disconnected');
+					if (code === 1000) {
+						console.log('client disconnected');
+					}
 				},
 				onClose: (ctx, code, reason) => {
 					console.log('client closed');
-				}
+				},
 			},
 			wsServer,
 		);

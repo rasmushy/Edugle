@@ -34,5 +34,5 @@ type Subscription {
 	queuePositionUpdated(userId: ID!): Int
 	userJoinedQueue(token: String!): QueueEntry
 	userLeftQueue(token: String!): QueueEntry
-	chatStarted: Chat
+	chatStarted(userId: ID!): Chat
 }

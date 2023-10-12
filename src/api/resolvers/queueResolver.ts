@@ -1,14 +1,15 @@
 import queueModel from '../models/queueModel';
-import {PubSub, withFilter} from 'graphql-subscriptions';
+import {withFilter} from 'graphql-subscriptions';
 import {GraphQLError} from 'graphql';
 import {QueueEntry, QueueResponse} from '../../interfaces/Queue';
 import authUser from '../../utils/auth';
 import chatModel from '../models/chatModel';
+import {User} from '../../interfaces/User';
+import {PubSub} from 'graphql-subscriptions';
 
 /*
 TODO: have subscriptions for the following events:
 - user online status
-- user left queue
 
 TODO: refactor the code to make it more readable
 */
@@ -65,7 +66,7 @@ export default {
 		//ENQUEUE USER & INITIATE CHAT
 		initiateChat: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
-			console.log('initiateChat: userId=', userId);
+			//console.log('initiateChat: userId=', userId);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
@@ -74,29 +75,31 @@ export default {
 			// Check if user is already in the queue
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (userInQueue) {
+				console.log('initiateChat: userInQueue=', userInQueue.id);
 				throw new GraphQLError('User is already in the queue', {
 					extensions: {code: 'ALREADY_IN_QUEUE'},
 				});
 			}
-			console.log('initiateChat: userInQueue=', userInQueue);
 
 			// Find first user in queue
-			const firstInQueue = await queueModel.findOne().sort({joinedAt: 1}).limit(1);
-			console.log('initiateChat: firstInQueue=', firstInQueue);
+			const firstInQueue = await queueModel.findOne({}).sort({joinedAt: 1}).exec();
 
 			if (firstInQueue) {
+				console.log('initiateChat: firstInQueue=', firstInQueue?.id);
 				// Create a chat & delete the first user in the queue
 				const newChat = await chatModel.create({
 					created_date: Date.now(),
-					users: [],
+					users: [firstInQueue.userId, userId],
 					messages: [],
 				});
-				console.log('initiateChat: newChat=', newChat);
+				//console.log('initiateChat: newChat=', newChat);
 				await queueModel.findByIdAndDelete(firstInQueue.id);
 				--globalQueueCounter;
-				pubsub.publish('CHAT_STARTED', {chatStarted: newChat});
-				return {status: 'Paired', chatId: newChat.id};
 
+				// Publish chat update to the current user & the other user
+				pubsub.publish(`CHAT_STARTED`, {chatStarted: newChat});
+
+				return {status: 'Paired', chatId: newChat.id};
 			} else {
 				//Else add user to the queue
 				const currentPosition = (await getGlobalQueueCounter()) + 1;
@@ -108,7 +111,7 @@ export default {
 					joinedAt: new Date(),
 				})) as QueueEntry;
 
-				console.log('initiateChat: newQueueEntry=', newQueueEntry);
+				console.log('initiateChat: newQueueEntry=', newQueueEntry.userId);
 				return {status: 'Queue', position: currentPosition};
 			}
 		},
@@ -160,11 +163,16 @@ export default {
 				return pubsub.asyncIterator([`QUEUE_POSITION_${userId}`]);
 			},
 		},
-		//when user is paired with another user
 		chatStarted: {
-			subscribe: () => {
-				return pubsub.asyncIterator(['CHAT_STARTED']);
-			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator(`CHAT_STARTED`),
+				(payload, variables) => {
+					const users = payload.chatStarted.users.map((user: User) => user._id.toString());
+					console.log('chatStarted: users=', users);
+					console.log('chatStarted: variables=', variables);
+					return users.includes(variables.userId);
+				},
+			),
 		},
 		//admin type of stuff / analyze data
 		userJoinedQueue: {
