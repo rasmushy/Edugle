@@ -25,6 +25,7 @@ export default {
 						extensions: {code: 'UNAUTHORIZED'},
 					});
 				}
+				console.log('checkToken: data=', data);
 				return data.user;
 			} catch (error) {
 				if (error instanceof Error) {

@@ -19,6 +19,7 @@ export default async (req: Request) => {
 		id: string;
 		role: string;
 	};
+	console.log('userFromToken=', userFromToken);
 
 	if (!userFromToken) {
 		throw new GraphQLError('User is not authenticated', {

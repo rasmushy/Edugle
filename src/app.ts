@@ -57,6 +57,12 @@ const wsServer = new WebSocketServer({
 				onSubscribe: (ctx, msg) => {
 					console.log('client subscribed');
 				},
+				onDisconnect: (ctx, code, reason) => {
+					console.log('client disconnected');
+				},
+				onClose: (ctx, code, reason) => {
+					console.log('client closed');
+				}
 			},
 			wsServer,
 		);

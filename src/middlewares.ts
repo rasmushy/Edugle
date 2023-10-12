@@ -28,15 +28,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 		const bearer = req.headers.authorization;
 		const token = bearer?.split(' ')[1];
 		if (!token) {
-			throw new GraphQLError('Token is missing in headers.authorization', {
-				extensions: {
-					code: 'AUTHENTICATION_ERROR',
-					http: {status: 401},
-				},
-			});
+			next(new CustomError('User not authenticated', 401));
 		}
 
-		const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as TokenUser;
+		const userFromToken = jwt.verify(token as string, process.env.JWT_SECRET as string) as TokenUser;
+		if (!userFromToken) {
+			next(new CustomError('User not authenticated', 401));
+		}
 		const user = (await userModel.findById(userFromToken.id).select('-password')) as User;
 
 		if (!user) {
