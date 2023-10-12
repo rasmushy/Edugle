@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node dist/src/index.js",
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "copyGraphql": "copyfiles -E -u 1 src/api/schemas/*.graphql dist",
+    "build": " rm -rf dist && tsc",
+    "copyGraphql": "copyfiles -E -u 1 src/api/schemas/*.graphql dist/src/",
     "postbuild": "npm run copyGraphql",
     "lint": "eslint --fix src test",
     "test": "jest --detectOpenHandles --forceExit --silent=false",
