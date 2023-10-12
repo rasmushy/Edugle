@@ -7,7 +7,6 @@ import chatModel from '../models/chatModel';
 
 /*
 TODO: have subscriptions for the following events:
-- user left chat
 - user online status
 - user left queue
 
