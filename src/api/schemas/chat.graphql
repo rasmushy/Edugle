@@ -20,7 +20,12 @@ type Query {
 }
 
 type Mutation {
+	leaveChat(chatId: ID!, token: String!): Chat
 	joinChat(chatId: ID!, token: String!): Chat
 	createChat(chat: CreateChatInput): Chat
 	deleteChatAsAdmin(id: ID!, admin: AdminWithTokenInput): Chat
+}
+
+type Subscription {
+	chatEnded: Chat
 }

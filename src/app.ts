@@ -18,7 +18,6 @@ import {useServer} from 'graphql-ws/lib/use/ws';
 import {WebSocketServer} from 'ws';
 import api from './api';
 
-
 const app = express();
 const httpServer = createServer(app);
 app.use(express.json());
@@ -37,6 +36,7 @@ const wsServer = new WebSocketServer({
 		const permissions = shield({
 			Mutation: {
 				loginUser: rateLimitRule({window: '1s', max: 5}),
+				initiateChat: rateLimitRule({window: '1s', max: 5}),
 			},
 		});
 
@@ -51,11 +51,19 @@ const wsServer = new WebSocketServer({
 		const serverCleanup = useServer(
 			{
 				schema,
-				onConnect: (ctx) => {
+				onConnect: async (ctx) => {
 					console.log('client connected');
 				},
 				onSubscribe: (ctx, msg) => {
 					console.log('client subscribed');
+				},
+				onDisconnect: (ctx, code, reason) => {
+					if (code === 1000) {
+						console.log('client disconnected');
+					}
+				},
+				onClose: (ctx, code, reason) => {
+					console.log('client closed');
 				},
 			},
 			wsServer,
@@ -85,16 +93,18 @@ const wsServer = new WebSocketServer({
 		});
 
 		await server.start();
-
 		app.use(
 			'/graphql',
 			express.json(),
 			cors<cors.CorsRequest>(),
 			expressMiddleware(server, {
-				context: async ({req}) => authenticate(req),
+				context: async ({req, res}) => {
+					return {req: authenticate(req), res: res};
+				},
 			}),
 		);
-		const PORT = process.env.PORT || 3000;
+
+		const PORT = process.env.PORT || 4000;
 		// Now that our HTTP server is fully set up, we can listen to it.
 		httpServer.listen(PORT, () => {
 			console.log(`Server is now running on http://localhost:${PORT}/graphql`);

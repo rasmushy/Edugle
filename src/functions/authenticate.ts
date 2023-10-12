@@ -1,6 +1,7 @@
 import {Request} from 'express';
 import jwt from 'jsonwebtoken';
 import {IUserIdWithToken} from '../interfaces/IUser';
+import {GraphQLError} from 'graphql';
 
 export default async (req: Request) => {
 	const bearer = req.headers.authorization;
@@ -19,13 +20,18 @@ export default async (req: Request) => {
 	};
 
 	if (!userFromToken) {
-		return {};
+		throw new GraphQLError('User is not authenticated', {
+			extensions: {
+				code: 'AUTHENTICATION_ERROR',
+				http: {status: 401},
+			},
+		});
 	}
 
-	const userIdWithToken: IUserIdWithToken = {
+	const user: IUserIdWithToken = {
 		id: userFromToken.id,
 		token,
 	};
 
-	return userIdWithToken;
+	return user;
 };

@@ -1,16 +1,11 @@
-import {Types} from 'mongoose';
 import {GraphQLError} from 'graphql';
 import {Message, newMessage} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
-import dotenv from 'dotenv';
-import {AdminIdWithToken, UserIdWithToken} from '../../interfaces/User';
-import {User} from '../../interfaces/User';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 import authUser from '../../utils/auth';
 import {PubSub} from 'graphql-subscriptions';
-dotenv.config();
 
 const pubsub = new PubSub();
 
@@ -53,14 +48,14 @@ export default {
 				sender: userId,
 			}) as Message;
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
-			console.log('createMessage', createMessage);
+			//console.log('createMessage: createMessage=', createMessage);
 			if (!createMessage) {
 				throw new GraphQLError('Failed to create message', {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
 			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
-			console.log('chat', chat);
+			//console.log('createMessage: chat=', chat);
 			chat.messages.push(createMessage.id);
 			await chat.save();
 
