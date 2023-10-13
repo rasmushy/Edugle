@@ -22,13 +22,13 @@ type Query {
 	# Returns a list of all chats in the database
 	chats: [Chat]
 	# Returns all chats for a given user
-	chatByUser(user_id: ID!): Chat
+	chatsByUser(userId: ID!): Chat
 }
 
 type Mutation {
-	joinChat(chatId: ID!, token: String!): Chat
+	joinChat(chatId: ID!, userToken: String!): Chat
 	# Creates a new chat
 	createChat(chat: CreateChatInput): Chat
 	# Deletes a chat corresponding to the given id
-	deleteChatAsAdmin(id: ID!, admin: AdminWithTokenInput): Chat
+	deleteChatAsAdmin(chatId: ID!, userToken: String!): Chat
 }

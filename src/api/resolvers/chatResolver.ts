@@ -24,14 +24,12 @@ export default {
 		messages: async (parent: Chat) => {
 			if (parent.messages.length < 1) return [];
 			try {
-				console.log('tulin tänne');
 				const response = await messageModel.find({_id: {$in: parent.messages}});
 				const foundIds = response.map((message) => message._id.toString());
 				const missingIds = parent.messages.filter((id) => !foundIds.includes(id.toString()));
 				if (missingIds.length > 0) {
 					await chatModel.updateOne({_id: parent._id}, {$pullAll: {messages: missingIds}});
 				}
-				console.log('tulin tänne2');
 				return response;
 			} catch (error: any) {
 				throw new GraphQLError(error.statusText, {
@@ -45,12 +43,18 @@ export default {
 			const response = await chatModel.find({});
 			return response;
 		},
-		chatByUser: async (_parent: unknown, args: UserIdWithToken) => {
-			return await chatModel.find({users: args.id});
+		chatsByUser: async (_parent: unknown, args: {userId: string}) => {
+			if (!args.userId) {
+				throw new GraphQLError('No id', {
+					extensions: {code: 'NO_ID'},
+				});
+			}
+			const response = await chatModel.find({users: {$all: [args.userId]}});
+			return response;
 		},
 	},
 	Mutation: {
-		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
+		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
 				throw new GraphQLError('Chat not found', {
@@ -58,7 +62,7 @@ export default {
 				});
 			}
 
-			const userId = authUser(args.token);
+			const userId = authUser(args.userToken);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
@@ -99,13 +103,25 @@ export default {
 			}
 			return createChat;
 		},
-		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
-			if (!args.admin.token || args.admin.role !== 'admin') {
+		deleteChatAsAdmin: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
+			if (!args.userToken) {
+				throw new GraphQLError('No token', {
+					extensions: {code: 'NO_TOKEN'},
+				});
+			}
+			const userId = authUser(args.userToken);
+			if (!userId) {
+				throw new GraphQLError('Token conversion failed', {
+					extensions: {code: 'FAILED_TO_CONVERT'},
+				});
+			}
+			const user = await userModel.findById(userId);
+			if (!user || user.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
-			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.id)) as Chat;
+			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.chatId)) as Chat;
 			return deleteChat;
 		},
 	},

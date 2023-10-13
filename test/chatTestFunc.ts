@@ -60,6 +60,57 @@ const createChat = async (url: string | Function, userData: LoginMessageResponse
 	});
 };
 
+const subscriteToChat = async (url: string | Function, chatId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-Type', 'application/json')
+			.send({
+				query: `
+				subscription Subscription($chatId: ID!) {
+					messageCreated(chatId: $chatId) {
+						id
+						created_date
+						users {
+							id
+							username
+							email
+							description
+							avatar
+							lastLogin
+						}
+						messages {
+							id
+							date
+							content
+							sender {
+								id
+								username
+								email
+								password
+								description
+								avatar
+								lastLogin
+								role
+								likes
+							}
+						}
+					}
+				}
+						`,
+				variables: {
+					chatId: chatId,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				resolve(res.body.data.messageCreated);
+			});
+	});
+};
+
 const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest) => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -67,46 +118,47 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-                    mutation DeleteChatAsAdmin($deleteChatAsAdminId: ID!, $admin: AdminWithTokenInput) {
-                        deleteChatAsAdmin(id: $deleteChatAsAdminId, admin: $admin) {
-                            id
-                            created_date
-                            users {
-                            id
-                            username
-                            email
-                            description
-                            avatar
-                            lastLogin
-                            }
-                            messages {
-                            id
-                            date
-                            content
-                            sender {
-                                id
-                                username
-                                email
-                                password
-                                description
-                                avatar
-                                lastLogin
-                                role
-                            }
-                            }
-                        }
-                        }
+							mutation Mutation($chatId: ID!, $userToken: String!) {
+								deleteChatAsAdmin(chatId: $chatId, userToken: $userToken) {
+									id
+									created_date
+									users {
+										id
+										username
+										email
+										description
+										avatar
+										lastLogin
+									}
+									messages {
+										id
+										date
+										content
+										sender {
+											id
+											username
+											email
+											password
+											description
+											avatar
+											lastLogin
+											role
+											likes
+										}
+									}
+								}
+							}
             `,
 				variables: {
-					deleteChatAsAdminId: chat.id,
-					token: adminUserData.token,
+					chatId: chat.id,
+					userToken: adminUserData.token,
 				},
 			})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
 				}
-				const chat = res.body.data;
+				const chat = res.body.data.deleteChatAsAdmin;
 				expect(chat).toHaveProperty('id');
 				expect(chat).toHaveProperty('created_date');
 				expect(chat).toHaveProperty('users');
@@ -115,4 +167,4 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 	});
 };
 
-export {createChat, deleteChat};
+export {createChat, subscriteToChat, deleteChat};

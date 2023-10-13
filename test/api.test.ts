@@ -8,14 +8,28 @@ import {MessageTest} from '../src/interfaces/Message';
 
 // Test functions
 import {registerUser, loginUser, deleteUser, getUsers, getUserById, likeUser, dislikeUser} from './userTestFunc';
-import {createMessage, deleteMessage, messageById, messageBySenderId} from './messageTestFunc';
-import {createChat, deleteChat} from './chatTestFunc';
+import {
+	createMessage,
+	createMessageWithInvalidChatId,
+	createMessageWithInvalidToken,
+	createManyMessages,
+	deleteMessage,
+	deleteManyMessages,
+	getMessages,
+	messageByMessageId,
+	messagesBySenderId,
+	messagesBySenderToken,
+	messageByInvalidMessageId,
+	messagesByInvalidSenderId,
+	messagesByInvalidSenderToken,
+} from './messageTestFunc';
+import {createChat, subscriteToChat, deleteChat} from './chatTestFunc';
 import {ChatTest} from '../src/interfaces/Chat';
 
 // Connections
 
 beforeAll(async () => {
-	await mongoose.connect(process.env.DATABASE_URL as string);
+	await mongoose.connect(process.env.TEST_DATABASE_URL as string);
 });
 
 afterAll(async () => {
@@ -34,6 +48,7 @@ describe('Testing backend functions', () => {
 		password: 'testo' + username,
 	};
 
+	//THIS USER NEED TO PRE-EXIST IN DATABASE AND HAVE ADMIN ROLE!
 	const adminUser = {
 		username: 'admin',
 		email: 'admin@test.fi',
@@ -82,27 +97,72 @@ describe('Testing backend functions', () => {
 		it('should create a chat', async () => {
 			chat = (await createChat(app, userData, adminUserData)) as ChatTest;
 		});
+
+		it('should subscribe to a chat', async () => {
+			await subscriteToChat(app, chat.id as string);
+		});
 	});
 	// Tests for messages
 
 	describe('Testing message functions', () => {
 		let testMessage: MessageTest;
+		let testMessages: MessageTest[];
 		it('should create a message', async () => {
 			// Test message we input
 
 			testMessage = (await createMessage(app, userData, chat.id as string)) as MessageTest;
 		});
 
-		it('should get a message by id', async () => {
-			await messageById(app, testMessage.id as string);
+		it('should not create a message with invalid token', async () => {
+			await createMessageWithInvalidToken(app, chat.id as string);
 		});
 
-		it('should get messages by sender', async () => {
-			await messageBySenderId(app, userData.user.id as string);
+		it('should not create a message with invalid chat id', async () => {
+			await createMessageWithInvalidChatId(app, userData);
+		});
+
+		it('should get a message by id', async () => {
+			await messageByMessageId(app, testMessage.id as string);
+		});
+
+		it('should not get a message by invalid id', async () => {
+			await messageByInvalidMessageId(app, '123');
+		});
+
+		it('should get messages by sender id', async () => {
+			await messagesBySenderId(app, userData.user.id as string);
+		});
+
+		it('should not get messages by invalid sender id', async () => {
+			await messagesByInvalidSenderId(app, '123');
+		});
+
+		it('should get messages by sender token', async () => {
+			await messagesBySenderToken(app, userData.token as string, userData.user.id as string);
+		});
+
+		it('should not get messages by invalid sender token', async () => {
+			await messagesByInvalidSenderToken(app, '123');
 		});
 
 		it('should delete a message', async () => {
 			await deleteMessage(app, userData, testMessage.id as string);
+		});
+
+		it('should create 10 messages', async () => {
+			testMessages = await createManyMessages(app, userData, chat.id as string, 10);
+		});
+
+		it('should find multiple messages', async () => {
+			await getMessages(app);
+		}, 20000);
+
+		it('should delete 10 messages', async () => {
+			await deleteManyMessages(
+				app,
+				userData,
+				testMessages.map((message) => message.id as string),
+			);
 		});
 	});
 
@@ -115,5 +175,11 @@ describe('Testing backend functions', () => {
 		// it('should delete a chat (as admin', async () => {
 		// 	await deleteChat(app, adminUserData, chat);
 		// });
+	});
+
+	describe('Chat can be deleted', () => {
+		it('should delete a chat (as admin', async () => {
+			await deleteChat(app, adminUserData, chat);
+		});
 	});
 });
