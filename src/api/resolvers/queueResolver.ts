@@ -60,7 +60,7 @@ export default {
 			}
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (!userInQueue) {
-				return {status: 'Matching with chatter', position: 0};
+				return {status: 'Not in Queue', position: 0};
 			}
 			return {status: 'In queue', position: userInQueue.position + 1};
 		},
