@@ -79,9 +79,7 @@ export default {
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (userInQueue) {
 				console.log('initiateChat: userInQueue=', userInQueue.id);
-				throw new GraphQLError('User is already in the queue', {
-					extensions: {code: 'ALREADY_IN_QUEUE'},
-				});
+				return ({status: 'In queue', position: userInQueue.position + 1});
 			}
 
 			// Find first user in queue
@@ -115,18 +113,21 @@ export default {
 				})) as QueueEntry;
 
 				console.log('initiateChat: newQueueEntry=', newQueueEntry.userId);
-				return {status: 'Queue', position: currentPosition};
+				return {status: 'Queue', position: currentPosition + 1};
 			}
 		},
 		//DEQUEUE USER
+		// Return pos 0 if not in queue, else pos > 0.
 		dequeueUser: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
+			if(!userId) 
+				return Error('Not authorized');
+			
 			const userInQueue = await queueModel.findOne({userId: userId}); // check if user is in the queue
 			if (!userInQueue) {
-				throw new GraphQLError('User is not in the queue', {
-					extensions: {code: 'NOT_FOUND', message: 'User is not in the queue'},
-				});
-			}
+					return {status: 'User not in queue', position: 0};
+				};
+			
 			console.log('userInQueue', userInQueue);
 			await queueModel.findOneAndDelete({userId: userId}); // remove user from the queue
 			// Update the positions of the remaining users in the queue
