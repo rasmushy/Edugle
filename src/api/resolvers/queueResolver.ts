@@ -62,7 +62,7 @@ export default {
 			if (!userInQueue) {
 				return {status: 'Matching with chatter', position: 0};
 			}
-			return {status: 'In queue', position: userInQueue.position};
+			return {status: 'In queue', position: userInQueue.position + 1};
 		},
 	},
 	Mutation: {
