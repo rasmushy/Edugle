@@ -57,9 +57,9 @@ export default {
 			const userId = authUser(args.token);
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (!userInQueue) {
-				throw new GraphQLError('User is not in the queue', {});
+				return {status: 'Matching with chatter', position: 0};
 			}
-			return {status: 'Queue', position: userInQueue.position};
+			return {status: 'In queue', position: userInQueue.position};
 		},
 	},
 	Mutation: {
