@@ -55,6 +55,9 @@ export default {
 		},
 		queuePosition: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
+			if(!userId) {
+				return Error('Not authorized');
+			}
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (!userInQueue) {
 				return {status: 'Matching with chatter', position: 0};
