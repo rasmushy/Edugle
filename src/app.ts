@@ -58,9 +58,9 @@ const wsServer = new WebSocketServer({
 					console.log('client subscribed');
 				},
 				onDisconnect: (ctx, code, reason) => {
-					if (code === 1000) {
+					// if (code === 1000) {
 						console.log('client disconnected');
-					}
+					// }
 				},
 				onClose: (ctx, code, reason) => {
 					console.log('client closed');

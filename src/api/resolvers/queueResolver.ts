@@ -55,11 +55,14 @@ export default {
 		},
 		queuePosition: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
-			const userInQueue = await queueModel.findOne({userId: userId});
-			if (!userInQueue) {
-				throw new GraphQLError('User is not in the queue', {});
+			if(!userId) {
+				return Error('Not authorized');
 			}
-			return {status: 'Queue', position: userInQueue.position};
+			const userInQueue = await queueModel.findById(userId);
+			if (!userInQueue) {
+				return {status: 'Not in Queue', position: 0};
+			}
+			return {status: 'In queue', position: userInQueue.position + 1};
 		},
 	},
 	Mutation: {
@@ -76,9 +79,7 @@ export default {
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (userInQueue) {
 				console.log('initiateChat: userInQueue=', userInQueue.id);
-				throw new GraphQLError('User is already in the queue', {
-					extensions: {code: 'ALREADY_IN_QUEUE'},
-				});
+				return ({status: 'In queue', position: userInQueue.position + 1});
 			}
 
 			// Find first user in queue
@@ -112,39 +113,47 @@ export default {
 				})) as QueueEntry;
 
 				console.log('initiateChat: newQueueEntry=', newQueueEntry.userId);
-				return {status: 'Queue', position: currentPosition};
+				return {status: 'Queue', position: currentPosition + 1};
 			}
 		},
 		//DEQUEUE USER
+		// Return pos 0 if not in queue, else pos > 0.
 		dequeueUser: async (_parent: unknown, args: {token: string}) => {
-			const userId = authUser(args.token);
-			const userInQueue = await queueModel.findOne({userId: userId}); // check if user is in the queue
-			if (!userInQueue) {
-				throw new GraphQLError('User is not in the queue', {
-					extensions: {code: 'NOT_FOUND', message: 'User is not in the queue'},
+			try {
+				
+				const userId = authUser(args.token);
+				if(!userId) 
+				return Error('Not authorized');
+			
+				const userInQueue = await queueModel.findOne({userId: userId}); // check if user is in the queue
+				if (!userInQueue) {
+					return {status: 'User not in queue', position: 0};
+				};
+				
+				console.log('userInQueue', userInQueue);
+				await queueModel.findOneAndDelete({userId: userId}); // remove user from the queue
+				// Update the positions of the remaining users in the queue
+				const queueEntries = await queueModel.find().sort({joinedAt: 1}).exec();
+				queueEntries.forEach(async (entry: any, index: number) => {
+					entry.position = index + 1;
+					await entry.save();
 				});
+				console.log('queueEntries', queueEntries);
+				
+				const newPosition = await queueModel.countDocuments();
+				--globalQueueCounter;
+				console.log('newPosition', newPosition);
+				
+				// Notify the next user in line, if any
+				const usersToUpdate = await queueModel.find({position: {$gt: userInQueue.position}});
+				usersToUpdate.forEach((user) => {
+					pubsub.publish(`QUEUE_POSITION_${user.userId}`, {position: user.position - 1, userId: user.userId});
+				});
+				
+				return {status: 'User left from queue', position: 0};
+			} catch (error) {
+				return error;
 			}
-			console.log('userInQueue', userInQueue);
-			await queueModel.findOneAndDelete({userId: userId}); // remove user from the queue
-			// Update the positions of the remaining users in the queue
-			const queueEntries = await queueModel.find().sort({joinedAt: 1}).exec();
-			queueEntries.forEach(async (entry: any, index: number) => {
-				entry.position = index + 1;
-				await entry.save();
-			});
-			console.log('queueEntries', queueEntries);
-
-			const newPosition = await queueModel.countDocuments();
-			--globalQueueCounter;
-			console.log('newPosition', newPosition);
-
-			// Notify the next user in line, if any
-			const usersToUpdate = await queueModel.find({position: {$gt: userInQueue.position}});
-			usersToUpdate.forEach((user) => {
-				pubsub.publish(`QUEUE_POSITION_${user.userId}`, {position: user.position - 1, userId: user.userId});
-			});
-
-			return {status: 'User left from queue', position: newPosition};
 		},
 	},
 	Subscription: {
