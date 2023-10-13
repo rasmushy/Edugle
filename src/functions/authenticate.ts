@@ -15,16 +15,16 @@ export default async (req: Request) => {
 		return {};
 	}
 
-	const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
-		id: string;
-	};
+	try {
+		var userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
+			id: string;
+		};
+	} catch (error) {
+		userFromToken = {id: ''};
+	}
 
 	if (!userFromToken) {
-		throw new GraphQLError('User is not authenticated', {
-			extensions: {
-				code: 'AUTHENTICATION_ERROR',
-				http: {status: 401},
-			},
+		return Error('User is not authenticated', {
 		});
 	}
 
