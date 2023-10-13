@@ -79,7 +79,7 @@ export default {
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (userInQueue) {
 				console.log('initiateChat: userInQueue=', userInQueue.id);
-				return ({status: 'In queue', position: userInQueue.position + 1});
+				return ({status: 'In queue', position: userInQueue.position});
 			}
 
 			// Find first user in queue
@@ -113,7 +113,7 @@ export default {
 				})) as QueueEntry;
 
 				console.log('initiateChat: newQueueEntry=', newQueueEntry.userId);
-				return {status: 'Queue', position: currentPosition + 1};
+				return {status: 'Queue', position: currentPosition};
 			}
 		},
 		//DEQUEUE USER
