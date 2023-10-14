@@ -46,9 +46,7 @@ export default {
 		},
 		chatsByUser: async (_parent: unknown, args: {userId: string}) => {
 			if (!args.userId) {
-				throw new GraphQLError('No id', {
-					extensions: {code: 'NO_ID'},
-				});
+				return Error('No id');
 			}
 			const response = await chatModel.find({users: {$all: [args.userId]}});
 			return response;
@@ -58,32 +56,24 @@ export default {
 		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
-				throw new GraphQLError('Chat not found', {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				return Error('Chat not found');
 			}
 
-			const userId = authUser(args.userToken);
+			const userId = convertToken(args.userToken);
 			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+				return Error('Not authorized');
 			}
 
 			const user = await userModel.findById(userId);
 
 			if (!user) {
-				throw new GraphQLError('User not found', {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				return Error('User not found');
 			}
 
 			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
 
 			if (chatWithUser) {
-				throw new GraphQLError('User already in chat', {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				return Error('User already in chat');
 			}
 
 			chat.users.push(user);
@@ -126,4 +116,15 @@ export default {
 			return deleteChat;
 		},
 	},
+};
+
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
 };

@@ -66,9 +66,7 @@ export default {
 					},
 				});
 				if (!response.ok) {
-					throw new GraphQLError('Token validation failed', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('Token validation failed');
 				}
 				const userFromAuth = await response.json();
 				return userFromAuth;

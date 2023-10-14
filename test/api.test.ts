@@ -1,5 +1,3 @@
-import {useServer} from 'graphql-ws/lib/use/ws';
-import {Response} from 'express';
 import mongoose from 'mongoose';
 import app from '../src/app';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
@@ -7,6 +5,7 @@ import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 // Interfaces
 import {UserTest} from '../src/interfaces/User';
 import {MessageTest} from '../src/interfaces/Message';
+import {ChatTest} from '../src/interfaces/Chat';
 
 // Test functions
 import {
@@ -49,8 +48,7 @@ import {
 	messagesByInvalidSenderId,
 	messagesByInvalidSenderToken,
 } from './messageTestFunc';
-import {createChat, subscriteToChat, deleteChat} from './chatTestFunc';
-import {ChatTest} from '../src/interfaces/Chat';
+import {createChat, getChats, chatsByUser, subscriteToChat, deleteChat} from './chatTestFunc';
 
 // Connections
 
@@ -99,6 +97,12 @@ describe('Testing backend functions', () => {
 		password: 'testo' + username,
 	};
 
+	const delUser: UserTest = {
+		username: 'deluser',
+		email: 'deluser@testeri.fi',
+		password: 'deluser',
+	};
+
 	//THIS USER NEED TO PRE-EXIST IN DATABASE AND HAVE ADMIN ROLE!
 	const adminUser = {
 		username: 'admin',
@@ -108,6 +112,7 @@ describe('Testing backend functions', () => {
 	var adminUserData: LoginMessageResponse;
 	var userData: LoginMessageResponse;
 	var userData2: LoginMessageResponse;
+	var delUserData: LoginMessageResponse;
 
 	// Userdata for tokens etc.
 
@@ -115,6 +120,7 @@ describe('Testing backend functions', () => {
 		it('should register a user', async () => {
 			await registerUser(app, newUser);
 			await registerUser(app, newUser2);
+			await registerUser(app, delUser);
 		});
 
 		it('should not register a user with same username', async () => {
@@ -130,6 +136,7 @@ describe('Testing backend functions', () => {
 			userData = await loginUser(app, newUser);
 			userData2 = await loginUser(app, newUser2);
 			adminUserData = await loginUser(app, adminUser);
+			delUserData = await loginUser(app, delUser);
 		});
 
 		it('should not login a user with incorrect credentials', async () => {
@@ -140,6 +147,10 @@ describe('Testing backend functions', () => {
 	describe('Testing user functions', () => {
 		// User to be used in tests
 
+		it('should delete delUser for future tests', async () => {
+			await deleteUser(app, delUserData);
+		});
+
 		it('should get users', async () => {
 			await getUsers(app, userData);
 		});
@@ -149,10 +160,7 @@ describe('Testing backend functions', () => {
 		});
 
 		it('should not get a user by incorrect token', async () => {
-			await getUserByIncorrectToken(
-				app,
-				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1MjQwZjY4YjE3NTRjZDBmMTE2NDJhMiIsImlhdCI6MTY5NzI5MDMzMSwiZXhwIjoxNjk3MjkzOTMxfQ.XgCW807snKiVkdBtU8K4UPu4KTM5mjsEB1Sj3AfpyLU',
-			);
+			await getUserByIncorrectToken(app, delUserData.token as string);
 		});
 
 		it('should get a user by id', async () => {
@@ -184,12 +192,7 @@ describe('Testing backend functions', () => {
 		});
 
 		it('should not be able to modify a user as admin with incorrect token', async () => {
-			await modifyUserAsAdminWithIncorrectToken(
-				app,
-				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1MjQwZjY4YjE3NTRjZDBmMTE2NDJhMiIsImlhdCI6MTY5NzI5MDMzMSwiZXhwIjoxNjk3MjkzOTMxfQ.XgCW807snKiVkdBtU8K4UPu4KTM5mjsEB1Sj3AfpyLU',
-				userData.user.id,
-				'admin',
-			);
+			await modifyUserAsAdminWithIncorrectToken(app, delUserData.token as string, userData.user.id, 'admin');
 		});
 	});
 
@@ -200,6 +203,14 @@ describe('Testing backend functions', () => {
 	describe('Testing chat functions', () => {
 		it('should create a chat', async () => {
 			chat = (await createChat(app, userData, adminUserData)) as ChatTest;
+		});
+
+		it('should get chats', async () => {
+			await getChats(app);
+		});
+
+		it('should get chats by user', async () => {
+			await chatsByUser(app, userData);
 		});
 
 		it('should subscribe to a chat', async () => {
@@ -304,11 +315,7 @@ describe('Testing backend functions', () => {
 		});
 
 		it('should not delete a user as admin without admin token', async () => {
-			await deleteUserAsAdminWithOutAdminToken(
-				app,
-				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1MjQwZjY4YjE3NTRjZDBmMTE2NDJhMiIsImlhdCI6MTY5NzI5MDMzMSwiZXhwIjoxNjk3MjkzOTMxfQ.XgCW807snKiVkdBtU8K4UPu4KTM5mjsEB1Sj3AfpyLU',
-				userData2.user.id as string,
-			);
+			await deleteUserAsAdminWithOutAdminToken(app, delUserData.token as string, userData2.user.id as string);
 		});
 
 		it('should delete a user as admin', async () => {

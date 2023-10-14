@@ -1,5 +1,4 @@
 import request from 'supertest';
-import {UserTest} from '../src/interfaces/User';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import {ChatTest} from '../src/interfaces/Chat';
 
@@ -56,6 +55,115 @@ const createChat = async (url: string | Function, userData: LoginMessageResponse
 				expect(chat).toHaveProperty('created_date');
 				expect(chat).toHaveProperty('users');
 				resolve(chat);
+			});
+	});
+};
+
+const getChats = async (url: string | Function) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+						query {
+												chats {
+														id
+														created_date
+														users {
+														id
+														username
+														email
+														description
+														avatar
+														lastLogin
+														}
+														messages {
+														id
+														date
+														content
+														sender {
+																id
+																username
+																email
+																password
+																description
+																avatar
+																lastLogin
+																role
+														}
+														}
+												}
+												}
+
+						`,
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chats = res.body.data.chats;
+				expect(chats).toBeInstanceOf(Array);
+				resolve(chats);
+			});
+	});
+};
+
+const chatsByUser = async (url: string | Function, userData: LoginMessageResponse) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+					query ChatsByUser($userId: ID!) {
+						chatsByUser(userId: $userId) {
+							id
+							created_date
+							users {
+								id
+								username
+								email
+								description
+								avatar
+								lastLogin
+							}
+							messages {
+								id
+								date
+								content
+								sender {
+									id
+									username
+									email
+									password
+									description
+									avatar
+									lastLogin
+									role
+									likes
+								}
+							}
+						}
+					}
+						`,
+				variables: {
+					userId: userData.user.id,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chats = res.body.data.chatsByUser;
+				expect(chats).toBeInstanceOf(Array);
+				expect(chats[0]).toHaveProperty('id');
+				expect(chats[0]).toHaveProperty('created_date');
+				expect(chats[0]).toHaveProperty('users');
+				expect(chats[0].users[1]).toHaveProperty('id');
+				expect(chats[0].users[1]).toHaveProperty('username');
+				expect(chats[0].users[1].id.toString()).toBe(userData.user.id);
+				resolve(chats);
 			});
 	});
 };
@@ -167,4 +275,4 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 	});
 };
 
-export {createChat, subscriteToChat, deleteChat};
+export {createChat, getChats, chatsByUser, subscriteToChat, deleteChat};
