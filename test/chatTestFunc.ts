@@ -218,6 +218,10 @@ const getChats = async (url: string | Function) => {
 				}
 				const chats = res.body.data.chats;
 				expect(chats).toBeInstanceOf(Array);
+				expect(chats[0]).toHaveProperty('id');
+				expect(chats[0]).toHaveProperty('created_date');
+				expect(chats[0]).toHaveProperty('users');
+				expect(chats[0]).toHaveProperty('messages');
 				resolve(chats);
 			});
 	});
