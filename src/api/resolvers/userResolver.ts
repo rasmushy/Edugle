@@ -242,7 +242,7 @@ export default {
 				if (authUser.user.username === args.username) {
 					throw new Error('Why would you unlike yourself?');
 				}
-				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$dec: {likes: 1}});
+				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$inc: {likes: -1}});
 				if (!user) {
 					throw new Error('Failed to add like');
 				}
