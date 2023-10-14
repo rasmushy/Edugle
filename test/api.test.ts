@@ -48,7 +48,7 @@ import {
 	messagesByInvalidSenderId,
 	messagesByInvalidSenderToken,
 } from './messageTestFunc';
-import {createChat, getChats, chatsByUser, subscriteToChat, deleteChat} from './chatTestFunc';
+import {createChat, joinChat, joinChatWithWrongToken, getChats, chatsByUser, subscriteToChat, deleteChat} from './chatTestFunc';
 
 // Connections
 
@@ -202,7 +202,15 @@ describe('Testing backend functions', () => {
 
 	describe('Testing chat functions', () => {
 		it('should create a chat', async () => {
-			chat = (await createChat(app, userData, adminUserData)) as ChatTest;
+			chat = (await createChat(app, userData)) as ChatTest;
+		});
+
+		it('should join a chat', async () => {
+			await joinChat(app, userData2, chat.id as string);
+		});
+
+		it('should not join a chat with invalid token', async () => {
+			await joinChatWithWrongToken(app, delUserData, chat.id as string);
 		});
 
 		it('should get chats', async () => {
