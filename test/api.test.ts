@@ -19,6 +19,8 @@ import {
 	deleteUserAsAdmin,
 	deleteUserAsAdminWithOutAdminToken,
 	getUsers,
+	getUserByToken,
+	getUserByIncorrectToken,
 	getUserByIncorrectId,
 	getUserById,
 	likeUser,
@@ -140,6 +142,17 @@ describe('Testing backend functions', () => {
 
 		it('should get users', async () => {
 			await getUsers(app, userData);
+		});
+
+		it('should get a user by token', async () => {
+			await getUserByToken(app, userData.token as string);
+		});
+
+		it('should not get a user by incorrect token', async () => {
+			await getUserByIncorrectToken(
+				app,
+				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1MjQwZjY4YjE3NTRjZDBmMTE2NDJhMiIsImlhdCI6MTY5NzI5MDMzMSwiZXhwIjoxNjk3MjkzOTMxfQ.XgCW807snKiVkdBtU8K4UPu4KTM5mjsEB1Sj3AfpyLU',
+			);
 		});
 
 		it('should get a user by id', async () => {

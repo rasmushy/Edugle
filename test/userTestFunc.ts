@@ -110,6 +110,82 @@ const getUsers = (url: string | Function, userdata: LoginMessageResponse): Promi
 	});
 };
 
+const getUserByToken = (url: string | Function, token: string): Promise<UserTest[]> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Authorization', `Bearer ${token}`)
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+					query Query($token: String!) {
+						getUserByToken(token: $token) {
+							id
+							username
+							email
+							password
+							description
+							avatar
+							lastLogin
+							role
+							likes
+						}
+					}
+				`,
+				variables: {
+					token: token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				expect(res.body.data.getUserByToken).toHaveProperty('username');
+				expect(res.body.data.getUserByToken).toHaveProperty('email');
+				expect(res.body.data.getUserByToken).toHaveProperty('id');
+				resolve(res.body);
+			});
+	});
+};
+
+const getUserByIncorrectToken = (url: string | Function, token: string): Promise<UserTest[]> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Authorization', `Bearer ${token}`)
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+					query Query($token: String!) {
+						getUserByToken(token: $token) {
+							id
+							username
+							email
+							password
+							description
+							avatar
+							lastLogin
+							role
+							likes
+						}
+					}
+				`,
+				variables: {
+					token: token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+
+				expect(res.body.data.getUserByToken).toBe(null);
+				expect(res.body.errors[0].message).toBe('User not found');
+				resolve(res.body);
+			});
+	});
+};
+
 const getUserById = (url: string | Function, id: String): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -625,6 +701,8 @@ export {
 	deleteUserAsAdmin,
 	deleteUserAsAdminWithOutAdminToken,
 	getUsers,
+	getUserByToken,
+	getUserByIncorrectToken,
 	getUserByIncorrectId,
 	getUserById,
 	likeUser,
