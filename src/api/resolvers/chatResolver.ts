@@ -1,6 +1,5 @@
 import {GraphQLError} from 'graphql';
 import {Chat} from '../../interfaces/Chat';
-import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
@@ -15,10 +14,11 @@ export default {
 			try {
 				const response = await userModel.find({_id: {$in: parent.users}});
 				return response;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('Failed to get users for chat id: ' + parent._id);
 			}
 		},
 		messages: async (parent: Chat) => {
@@ -31,10 +31,11 @@ export default {
 					await chatModel.updateOne({_id: parent._id}, {$pullAll: {messages: missingIds}});
 				}
 				return response;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('Failed to get messages for chat id: ' + parent._id);
 			}
 		},
 	},

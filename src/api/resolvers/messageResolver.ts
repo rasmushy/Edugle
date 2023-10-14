@@ -36,50 +36,58 @@ export default {
 					return deletedUser;
 				}
 				return response as User;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('Failed to get sender for message id: ' + parent._id);
 			}
 		},
 	},
 	Query: {
 		messages: async () => {
-			const response = await messageModel.find({});
-			return response;
+			const messages = await messageModel.find({});
+			if (!messages) {
+				return Error('No messages found');
+			}
+			return messages;
 		},
 		messageById: async (_parent: unknown, args: {messageId: string}) => {
-			return await messageModel.findById(args.messageId);
+			const message = await messageModel.findById(args.messageId);
+			if (!message) {
+				return Error('Message not found');
+			}
+			return message;
 		},
 		messagesBySenderToken: async (_parent: unknown, args: {userToken: string}) => {
 			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
+			}
 			const messages = await messageModel.find({sender: userId});
+			if (!messages) {
+				return Error('No messages found');
+			}
 			return messages;
 		},
 		messagesBySenderId: async (_parent: unknown, args: {userId: string}) => {
 			const messages = await messageModel.find({sender: args.userId});
+			if (!messages) {
+				return Error('No messages found');
+			}
 			return messages;
 		},
 	},
 
 	Mutation: {
 		createMessage: async (_parent: unknown, args: {chatId: string; message: newMessage}) => {
-			if (!args.message.senderToken) {
-				throw new GraphQLError('No token', {
-					extensions: {code: 'NO_TOKEN'},
-				});
-			}
-			const userId = authUser(args.message.senderToken);
-			if (!userId) {
-				throw new GraphQLError('Token conversion failed', {
-					extensions: {code: 'FAILED_TO_CONVERT'},
-				});
+			const userId = convertToken(args.message.senderToken);
+			if (userId instanceof Error) {
+				return userId;
 			}
 			const chat: Chat = (await chatModel.findById(args.chatId)) as Chat;
 			if (!chat) {
-				throw new GraphQLError('Chat not found', {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				return Error('Chat not found');
 			}
 			const newMessage: Message = new messageModel({
 				date: Date.now(),
@@ -88,9 +96,7 @@ export default {
 			}) as Message;
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
 			if (!createMessage) {
-				throw new GraphQLError('Failed to create message', {
-					extensions: {code: 'FAILED_TO_CREATE'},
-				});
+				return Error('Failed to create message');
 			}
 			chat.messages.push(createMessage.id);
 			await chat.save();
@@ -107,44 +113,26 @@ export default {
 		},
 
 		deleteMessage: async (_parent: unknown, args: {messageId: string; userToken: string}) => {
-			if (!args.userToken) {
-				throw new GraphQLError('No token', {
-					extensions: {code: 'NO_TOKEN'},
-				});
-			}
-			const userId = authUser(args.userToken);
-			if (!userId) {
-				throw new GraphQLError('Token conversion failed', {
-					extensions: {code: 'FAILED_TO_CONVERT'},
-				});
+			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
 			}
 			const message: Message = (await messageModel.findById(args.messageId)) as Message;
 			if (message.sender.toString() !== userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+				return Error('Not authorized!');
 			}
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
 		},
 
 		deleteMessageAsAdmin: async (_parent: unknown, args: {messageId: string; userToken: string}) => {
-			if (!args.userToken) {
-				throw new GraphQLError('No token', {
-					extensions: {code: 'NO_TOKEN'},
-				});
-			}
-			const userId = authUser(args.userToken);
-			if (!userId) {
-				throw new GraphQLError('Token conversion failed', {
-					extensions: {code: 'FAILED_TO_CONVERT'},
-				});
+			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
 			}
 			const user = await userModel.findById(userId);
 			if (!user || user.role !== 'admin') {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+				return Error('Not authorized!');
 			}
 			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
@@ -152,17 +140,13 @@ export default {
 	},
 };
 
-const convertToken = (token: string) => {
-	if (!token) {
-		throw new GraphQLError('No token', {
-			extensions: {code: 'NO_TOKEN'},
-		});
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
 	}
-	const userId = authUser(token);
+	const userId = authUser(userToken);
 	if (!userId) {
-		throw new GraphQLError('Token conversion failed', {
-			extensions: {code: 'FAILED_TO_CONVERT'},
-		});
+		return Error('Token conversion failed');
 	}
 	return userId;
 };

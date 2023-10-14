@@ -3,6 +3,8 @@ import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import mongoose, {mongo} from 'mongoose';
 import {ChatTest} from '../src/interfaces/Chat';
+import e from 'express';
+import exp from 'constants';
 
 const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
 	return new Promise((resolve, reject) => {
@@ -90,7 +92,8 @@ const createMessageWithInvalidToken = async (url: string | Function, chatId: str
 				if (err) {
 					reject(err);
 				}
-				expect(res.body.errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+				expect(res.body.data.createMessage).toBe(null);
+				expect(res.body.errors[0].message).toBe('Token conversion failed');
 				resolve(res.body.data.createMessage);
 			});
 	});
@@ -133,13 +136,14 @@ const createMessageWithInvalidChatId = async (url: string | Function, userData: 
 				if (err) {
 					reject(err);
 				}
-				expect(res.body.errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+				expect(res.body.data.createMessage).toBe(null);
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(res.body.data.createMessage);
 			});
 	});
 };
 
-const getMessages = async (url: string | Function) => {
+const getMessages = async (url: string | Function, amount: number) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -170,7 +174,7 @@ const getMessages = async (url: string | Function) => {
 				if (err) {
 					reject(err);
 				}
-				expect(res.body.data.messages.length).toEqual(10);
+				expect(res.body.data.messages.length).toEqual(amount);
 				for (const message of res.body.data.messages) {
 					expect(message).toHaveProperty('id');
 					expect(message).toHaveProperty('date');
@@ -262,6 +266,7 @@ const messageByInvalidMessageId = async (url: string | Function, messageId: stri
 					reject(err);
 				}
 				expect(res.body.data.messageById).toBe(null);
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(res.body.data.messageById);
 			});
 	});
@@ -348,6 +353,7 @@ const messagesByInvalidSenderId = async (url: string | Function, userId: string)
 					reject(err);
 				}
 				expect(res.body.data.messagesBySenderId).toBe(null);
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(res.body.data.messagesBySender);
 			});
 	});
@@ -434,6 +440,7 @@ const messagesByInvalidSenderToken = async (url: string | Function, userToken: s
 					reject(err);
 				}
 				expect(res.body.data.messagesBySenderToken).toBe(null);
+				expect(res.body.errors[0].message).toBe('Token conversion failed');
 				resolve(res.body.data.messagesBySender);
 			});
 	});
@@ -486,6 +493,185 @@ const deleteMessage = async (url: string | Function, userData: LoginMessageRespo
 	});
 };
 
+const deleteMessageAsSomeoneElse = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+							mutation Mutation($messageId: ID!, $userToken: String!) {
+								deleteMessage(messageId: $messageId, userToken: $userToken) {
+									content
+									date
+									id
+									sender {
+										avatar
+										description
+										email
+										id
+										lastLogin
+										likes
+										password
+										role
+										username
+									}
+								}
+							}
+						`,
+				variables: {
+					messageId: messageId as unknown as mongoose.Types.ObjectId,
+					userToken: userData.token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				expect(res.body.data.deleteMessage).toBe(null);
+				expect(res.body.errors[0].message).toBe('Not authorized!');
+				resolve(res.body.data.deleteMessage);
+			});
+	});
+};
+
+const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.set('Authorization', `Bearer ${userData.token}`)
+			.send({
+				query: `
+							mutation Mutation($messageId: ID!, $userToken: String!) {
+								deleteMessageAsAdmin(messageId: $messageId, userToken: $userToken) {
+									id
+									date
+									content
+									sender {
+										id
+										username
+										email
+										password
+										description
+										avatar
+										lastLogin
+										role
+										likes
+									}
+								}
+							}
+						`,
+				variables: {
+					messageId: messageId as unknown as mongoose.Types.ObjectId,
+					userToken: userData.token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const message = res.body.data.deleteMessageAsAdmin;
+				expect(message).toHaveProperty('id');
+				expect(message.id).toBe(messageId);
+				expect(message).toHaveProperty('date');
+				expect(message).toHaveProperty('content');
+				expect(message).toHaveProperty('sender');
+				resolve(message);
+			});
+	});
+};
+
+const deleteMessageAsAdminButUser = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.set('Authorization', `Bearer ${userData.token}`)
+			.send({
+				query: `
+							mutation Mutation($messageId: ID!, $userToken: String!) {
+								deleteMessageAsAdmin(messageId: $messageId, userToken: $userToken) {
+									content
+									date
+									id
+									sender {
+										avatar
+										description
+										email
+										id
+										lastLogin
+										likes
+										password
+										role
+										username
+									}
+								}
+							}
+						`,
+				variables: {
+					messageId: messageId as unknown as mongoose.Types.ObjectId,
+					userToken: userData.token,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				expect(res.body.errors[0].message).toBe('Not authorized!');
+				resolve(res.body.data.deleteMessage);
+			});
+	});
+};
+
+const deletedUsersMessageByMessageId = async (url: string | Function, messageId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: `
+							query Query($messageId: ID!) {
+								messageById(messageId: $messageId) {
+									content
+									date
+									id
+									sender {
+										avatar
+										description
+										email
+										id
+										lastLogin
+										likes
+										password
+										role
+										username
+									}
+								}
+							}
+            `,
+				variables: {
+					messageId: messageId,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const message = res.body.data.messageById;
+				expect(message).toHaveProperty('id');
+				expect(message).toHaveProperty('date');
+				expect(message).toHaveProperty('content');
+				expect(message).toHaveProperty('sender');
+				expect(message.content).toEqual('test message');
+				expect(message.sender.username).toBe('DELETED');
+				expect(message.sender.email).toBe('DELETED');
+				expect(message.sender.likes).toBe(404);
+				resolve(message);
+			});
+	});
+};
+
 const createManyMessages = async (url: string | Function, userData: LoginMessageResponse, chatId: string, amount: number) => {
 	const messages: Array<MessageTest> = [];
 	for (let i = 0; i < amount; i++) {
@@ -507,6 +693,10 @@ export {
 	createMessageWithInvalidToken,
 	deleteMessage,
 	deleteManyMessages,
+	deleteMessageAsAdmin,
+	deleteMessageAsAdminButUser,
+	deleteMessageAsSomeoneElse,
+	deletedUsersMessageByMessageId,
 	getMessages,
 	messageByMessageId,
 	messageByInvalidMessageId,
