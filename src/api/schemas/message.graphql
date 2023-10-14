@@ -22,8 +22,14 @@ input MessageInput {
 	senderToken: String!
 }
 
+type MessageCreatedPayload {
+	message: Message!
+	chatId: ID!
+	timestamp: Date!
+}
+
 type Subscription {
-	messageCreated(chatId: ID!): Chat
+	messageCreated(chatId: ID!): MessageCreatedPayload
 }
 
 type Mutation {
