@@ -2,9 +2,26 @@ import request from 'supertest';
 import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import mongoose, {mongo} from 'mongoose';
-import {ChatTest} from '../src/interfaces/Chat';
-import e from 'express';
-import exp from 'constants';
+
+const createMessageQuery = () => `
+	mutation CreateMessage($message: MessageInput!, $chatId: ID!) {
+		createMessage(message: $message, chatId: $chatId) {
+			id
+			date
+			content
+			sender {
+				id
+				username
+				email
+				password
+				description
+				avatar
+				lastLogin
+				role
+			}
+		}
+	}
+`;
 
 const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
 	return new Promise((resolve, reject) => {
@@ -12,25 +29,7 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-            mutation CreateMessage($message: MessageInput!, $chatId: ID!) {
-              createMessage(message: $message, chatId: $chatId) {
-                id
-                date
-                content
-                sender {
-                  id
-                  username
-                  email
-                  password
-                  description
-                  avatar
-                  lastLogin
-                  role
-                }
-              }
-            }
-            `,
+				query: createMessageQuery(),
 				variables: {
 					chatId: chatId,
 					message: {
@@ -61,25 +60,7 @@ const createMessageWithInvalidToken = async (url: string | Function, chatId: str
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							mutation CreateMessage($message: MessageInput!, $chatId: ID!) {
-								createMessage(message: $message, chatId: $chatId) {
-									id
-									date
-									content
-									sender {
-										id
-										username
-										email
-										password
-										description
-										avatar
-										lastLogin
-										role
-									}
-								}
-							}
-							`,
+				query: createMessageQuery(),
 				variables: {
 					chatId: chatId,
 					message: {
@@ -105,25 +86,7 @@ const createMessageWithInvalidChatId = async (url: string | Function, userData: 
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-            mutation CreateMessage($message: MessageInput!, $chatId: ID!) {
-              createMessage(message: $message, chatId: $chatId) {
-                id
-                date
-                content
-                sender {
-                  id
-                  username
-                  email
-                  password
-                  description
-                  avatar
-                  lastLogin
-                  role
-                }
-              }
-            }
-            `,
+				query: createMessageQuery(),
 				variables: {
 					chatId: '123',
 					message: {
@@ -186,32 +149,34 @@ const getMessages = async (url: string | Function, amount: number) => {
 	});
 };
 
+const messageByIdQuery = () => `
+	query Query($messageId: ID!) {
+		messageById(messageId: $messageId) {
+			content
+			date
+			id
+			sender {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				likes
+				password
+				role
+				username
+			}
+		}
+	}
+`;
+
 const messageByMessageId = async (url: string | Function, messageId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($messageId: ID!) {
-								messageById(messageId: $messageId) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-            `,
+				query: messageByIdQuery(),
 				variables: {
 					messageId: messageId,
 				},
@@ -237,26 +202,7 @@ const messageByInvalidMessageId = async (url: string | Function, messageId: stri
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($messageId: ID!) {
-								messageById(messageId: $messageId) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: messageByIdQuery(),
 				variables: {
 					messageId: messageId,
 				},
@@ -272,32 +218,34 @@ const messageByInvalidMessageId = async (url: string | Function, messageId: stri
 	});
 };
 
+const messageBySenderIdQuery = () => `
+	query Query($userId: ID!) {
+		messagesBySenderId(userId: $userId) {
+			content
+			date
+			id
+			sender {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				likes
+				password
+				role
+				username
+			}
+		}
+	}
+`;
+
 const messagesBySenderId = async (url: string | Function, userId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($userId: ID!) {
-								messagesBySenderId(userId: $userId) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-            `,
+				query: messageBySenderIdQuery(),
 				variables: {
 					userId: userId,
 				},
@@ -324,26 +272,7 @@ const messagesByInvalidSenderId = async (url: string | Function, userId: string)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($userId: ID!) {
-								messagesBySenderId(userId: $userId) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: messageBySenderIdQuery(),
 				variables: {
 					userId: userId,
 				},
@@ -359,32 +288,34 @@ const messagesByInvalidSenderId = async (url: string | Function, userId: string)
 	});
 };
 
+const messageBySenderTokenQuery = () => `
+	query Query($userToken: String!) {
+		messagesBySenderToken(userToken: $userToken) {
+			content
+			date
+			id
+			sender {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				likes
+				password
+				role
+				username
+			}
+		}
+	}
+`;
+
 const messagesBySenderToken = async (url: string | Function, userToken: string, userId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($userToken: String!) {
-								messagesBySenderToken(userToken: $userToken) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: messageBySenderTokenQuery(),
 				variables: {
 					userToken: userToken,
 				},
@@ -411,26 +342,7 @@ const messagesByInvalidSenderToken = async (url: string | Function, userToken: s
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($userToken: String!) {
-								messagesBySenderToken(userToken: $userToken) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: messageBySenderTokenQuery(),
 				variables: {
 					userToken: userToken,
 				},
@@ -446,32 +358,34 @@ const messagesByInvalidSenderToken = async (url: string | Function, userToken: s
 	});
 };
 
+const deleteMessageQuery = () => `
+	mutation Mutation($messageId: ID!, $userToken: String!) {
+		deleteMessage(messageId: $messageId, userToken: $userToken) {
+			content
+			date
+			id
+			sender {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				likes
+				password
+				role
+				username
+			}
+		}
+	}
+`;
+
 const deleteMessage = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							mutation Mutation($messageId: ID!, $userToken: String!) {
-								deleteMessage(messageId: $messageId, userToken: $userToken) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-            `,
+				query: deleteMessageQuery(),
 				variables: {
 					messageId: messageId as unknown as mongoose.Types.ObjectId,
 					userToken: userData.token,
@@ -499,26 +413,7 @@ const deleteMessageAsSomeoneElse = async (url: string | Function, userData: Logi
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							mutation Mutation($messageId: ID!, $userToken: String!) {
-								deleteMessage(messageId: $messageId, userToken: $userToken) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: deleteMessageQuery(),
 				variables: {
 					messageId: messageId as unknown as mongoose.Types.ObjectId,
 					userToken: userData.token,
@@ -535,6 +430,27 @@ const deleteMessageAsSomeoneElse = async (url: string | Function, userData: Logi
 	});
 };
 
+const deleteMessageAsAdminQuery = () => `
+	mutation Mutation($messageId: ID!, $userToken: String!) {
+		deleteMessageAsAdmin(messageId: $messageId, userToken: $userToken) {
+			id
+			date
+			content
+			sender {
+				id
+				username
+				email
+				password
+				description
+				avatar
+				lastLogin
+				role
+				likes
+			}
+		}
+	}
+`;
+
 const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -542,26 +458,7 @@ const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessa
 			.set('Content-type', 'application/json')
 			.set('Authorization', `Bearer ${userData.token}`)
 			.send({
-				query: `
-							mutation Mutation($messageId: ID!, $userToken: String!) {
-								deleteMessageAsAdmin(messageId: $messageId, userToken: $userToken) {
-									id
-									date
-									content
-									sender {
-										id
-										username
-										email
-										password
-										description
-										avatar
-										lastLogin
-										role
-										likes
-									}
-								}
-							}
-						`,
+				query: deleteMessageAsAdminQuery(),
 				variables: {
 					messageId: messageId as unknown as mongoose.Types.ObjectId,
 					userToken: userData.token,
@@ -589,26 +486,7 @@ const deleteMessageAsAdminButUser = async (url: string | Function, userData: Log
 			.set('Content-type', 'application/json')
 			.set('Authorization', `Bearer ${userData.token}`)
 			.send({
-				query: `
-							mutation Mutation($messageId: ID!, $userToken: String!) {
-								deleteMessageAsAdmin(messageId: $messageId, userToken: $userToken) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-						`,
+				query: deleteMessageAsAdminQuery(),
 				variables: {
 					messageId: messageId as unknown as mongoose.Types.ObjectId,
 					userToken: userData.token,
@@ -630,26 +508,7 @@ const deletedUsersMessageByMessageId = async (url: string | Function, messageId:
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							query Query($messageId: ID!) {
-								messageById(messageId: $messageId) {
-									content
-									date
-									id
-									sender {
-										avatar
-										description
-										email
-										id
-										lastLogin
-										likes
-										password
-										role
-										username
-									}
-								}
-							}
-            `,
+				query: messageByIdQuery(),
 				variables: {
 					messageId: messageId,
 				},

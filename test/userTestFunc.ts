@@ -1,9 +1,20 @@
-import {GraphQLError} from 'graphql';
 // eslint-disable-next-line node/no-unpublished-import
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import DBMessageResponse from '../src/interfaces/DBMessageResponse';
+
+const registerUserQuery = () => `
+mutation regUser($user: RegisterInput!) {
+	registerUser(user: $user) {
+		user {
+			username
+			email
+			password
+		}
+	}
+}
+`;
 
 const registerUser = (url: string | Function, user: UserTest): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
@@ -11,15 +22,7 @@ const registerUser = (url: string | Function, user: UserTest): Promise<UserTest>
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation regUser($user: RegisterInput!) {
-						registerUser(user: $user) {
-							user {
-								username
-								email
-								password
-							}
-						}
-					}`,
+				query: registerUserQuery(),
 				variables: {
 					user: {
 						username: user.username,
@@ -45,15 +48,7 @@ const registerUserWithExistingCredentials = (url: string | Function, user: UserT
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation regUser($user: RegisterInput!) {
-						registerUser(user: $user) {
-							user {
-								username
-								email
-								password
-							}
-						}
-					}`,
+				query: registerUserQuery(),
 				variables: {
 					user: {
 						username: user.username,
@@ -110,6 +105,22 @@ const getUsers = (url: string | Function, userdata: LoginMessageResponse): Promi
 	});
 };
 
+const getUserByTokenQuery = () => `
+query Query($token: String!) {
+	getUserByToken(token: $token) {
+		id
+		username
+		email
+		password
+		description
+		avatar
+		lastLogin
+		role
+		likes
+	}
+}
+`;
+
 const getUserByToken = (url: string | Function, token: string): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -117,21 +128,7 @@ const getUserByToken = (url: string | Function, token: string): Promise<UserTest
 			.set('Authorization', `Bearer ${token}`)
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-					query Query($token: String!) {
-						getUserByToken(token: $token) {
-							id
-							username
-							email
-							password
-							description
-							avatar
-							lastLogin
-							role
-							likes
-						}
-					}
-				`,
+				query: getUserByTokenQuery(),
 				variables: {
 					token: token,
 				},
@@ -155,21 +152,7 @@ const getUserByIncorrectToken = (url: string | Function, token: string): Promise
 			.set('Authorization', `Bearer ${token}`)
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-					query Query($token: String!) {
-						getUserByToken(token: $token) {
-							id
-							username
-							email
-							password
-							description
-							avatar
-							lastLogin
-							role
-							likes
-						}
-					}
-				`,
+				query: getUserByTokenQuery(),
 				variables: {
 					token: token,
 				},
@@ -186,26 +169,28 @@ const getUserByIncorrectToken = (url: string | Function, token: string): Promise
 	});
 };
 
+const getUserByIdQuery = () => `
+query GetUserById($getUserByIdId: ID!) {
+	getUserById(id: $getUserByIdId) {
+		id
+		username
+		email
+		password
+		description
+		avatar
+		lastLogin
+		role
+	}
+}
+`;
+
 const getUserById = (url: string | Function, id: String): Promise<UserTest[]> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-				query GetUserById($getUserByIdId: ID!) {
-					getUserById(id: $getUserByIdId) {
-						id
-						username
-						email
-						password
-						description
-						avatar
-						lastLogin
-						role
-					}
-					}
-				`,
+				query: getUserByIdQuery(),
 				variables: {
 					getUserByIdId: id,
 				},
@@ -228,20 +213,7 @@ const getUserByIncorrectId = (url: string | Function, id: String): Promise<UserT
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-				query GetUserById($getUserByIdId: ID!) {
-					getUserById(id: $getUserByIdId) {
-						id
-						username
-						email
-						password
-						description
-						avatar
-						lastLogin
-						role
-					}
-					}
-				`,
+				query: getUserByIdQuery(),
 				variables: {
 					getUserByIdId: id,
 				},
@@ -257,24 +229,28 @@ const getUserByIncorrectId = (url: string | Function, id: String): Promise<UserT
 	});
 };
 
+const loginUserQuery = () => `
+mutation LoginUser($credentials: LoginInput!) {
+	loginUser(credentials: $credentials) {
+		user {
+			username
+			email
+			password
+			id
+		}
+		token
+		message
+	}
+}
+`;
+
 const loginUser = (url: string | Function, user: UserTest): Promise<LoginMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation LoginUser($credentials: LoginInput!) {
-							loginUser(credentials: $credentials) {
-								user {
-									username
-									email
-									password
-									id
-								}
-								token
-								message
-							}
-						}`,
+				query: loginUserQuery(),
 				variables: {
 					credentials: {
 						email: user.email,
@@ -302,18 +278,7 @@ const loginUserWithIncorrectCredentials = (url: string | Function, user: UserTes
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation LoginUser($credentials: LoginInput!) {
-							loginUser(credentials: $credentials) {
-								user {
-									username
-									email
-									password
-									id
-								}
-								token
-								message
-							}
-						}`,
+				query: loginUserQuery(),
 				variables: {
 					credentials: {
 						email: user.email,
@@ -332,28 +297,32 @@ const loginUserWithIncorrectCredentials = (url: string | Function, user: UserTes
 	});
 };
 
+const deleteUserQuery = () => `
+mutation DelUser($token: String) {
+	deleteUser(token: $token) {
+		token
+		message
+		user {
+			id
+			username
+			email
+			password
+			description
+			avatar
+			lastLogin
+			role
+		}
+	}
+}
+`;
+
 const deleteUser = (url: string | Function, userData: LoginMessageResponse): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation DelUser($token: String) {
-							deleteUser(token: $token) {
-								token
-								message
-								user {
-								id
-								username
-								email
-								password
-								description
-								avatar
-								lastLogin
-								role
-								}
-							}
-							}`,
+				query: deleteUserQuery(),
 				variables: {
 					token: userData.token,
 				},
@@ -376,22 +345,7 @@ const deleteUserWithIncorrectToken = (url: string | Function, token: string): Pr
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `mutation DelUser($token: String) {
-							deleteUser(token: $token) {
-								token
-								message
-								user {
-								id
-								username
-								email
-								password
-								description
-								avatar
-								lastLogin
-								role
-								}
-							}
-							}`,
+				query: deleteUserQuery(),
 				variables: {
 					token: token,
 				},
@@ -407,6 +361,20 @@ const deleteUserWithIncorrectToken = (url: string | Function, token: string): Pr
 	});
 };
 
+const deleteUserAsAdminQuery = () => `
+mutation Mutation($adminToken: String!, $userToBeDeletedId: ID!) {
+	deleteUserAsAdmin(adminToken: $adminToken, userToBeDeletedId: $userToBeDeletedId) {
+		token
+		message
+		user {
+			id
+			username
+			password
+		}
+	}
+}
+`;
+
 const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageResponse, deleteUserID: string): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -414,19 +382,7 @@ const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageRespon
 			.set('Content-type', 'application/json')
 			.set('Authorization', `Bearer ${adminData.token}`)
 			.send({
-				query: `
-								mutation Mutation($adminToken: String!, $userToBeDeletedId: ID!) {
-									deleteUserAsAdmin(adminToken: $adminToken, userToBeDeletedId: $userToBeDeletedId) {
-										token
-										message
-										user {
-											id
-											username
-											password
-										}
-									}
-								}
-							`,
+				query: deleteUserAsAdminQuery(),
 				variables: {
 					adminToken: adminData.token,
 					userToBeDeletedId: deleteUserID,
@@ -453,19 +409,7 @@ const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminToken: 
 			.set('Content-type', 'application/json')
 			.set('Authorization', `Bearer ${adminToken}`)
 			.send({
-				query: `
-								mutation Mutation($adminToken: String!, $userToBeDeletedId: ID!) {
-									deleteUserAsAdmin(adminToken: $adminToken, userToBeDeletedId: $userToBeDeletedId) {
-										token
-										message
-										user {
-											id
-											username
-											password
-										}
-									}
-								}
-							`,
+				query: deleteUserAsAdminQuery(),
 				variables: {
 					adminToken: adminToken,
 					userToBeDeletedId: deleteUserID,
@@ -531,24 +475,28 @@ const dislikeUser = (url: string | Function, token: string, username: string): P
 	});
 };
 
+const modifyUserQuery = () => `
+mutation Mutation($modifyUser: modifyUserInput) {
+	modifyUser(modifyUser: $modifyUser) {
+		token
+		message
+		user {
+			id
+			username
+			description
+			avatar
+		}
+	}
+}
+`;
+
 const modifyUser = (url: string | Function, userToken: string, newDesc: string, newAvatar: string): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							mutation Mutation($modifyUser: modifyUserInput) {
-								modifyUser(modifyUser: $modifyUser) {
-									token
-									message
-									user {
-										id
-										username
-									}
-								}
-							}
-				`,
+				query: modifyUserQuery(),
 				variables: {
 					modifyUser: {
 						token: userToken,
@@ -575,18 +523,7 @@ const modifyUserWithIncorrectToken = (url: string | Function, userToken: string,
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-							mutation Mutation($modifyUser: modifyUserInput) {
-								modifyUser(modifyUser: $modifyUser) {
-									token
-									message
-									user {
-										id
-										username
-									}
-								}
-							}
-				`,
+				query: modifyUserQuery(),
 				variables: {
 					modifyUser: {
 						token: userToken,
@@ -606,6 +543,21 @@ const modifyUserWithIncorrectToken = (url: string | Function, userToken: string,
 	});
 };
 
+const modifyUserAsAdminQuery = () => `
+mutation Mutation($user: modifyUserAsAdminInput, $modifyUser: ModifyUserWithTokenAndRoleInput) {
+	modifyUserAsAdmin(user: $user, modifyUser: $modifyUser) {
+		token
+		message
+		user {
+			id
+			username
+			description
+			avatar
+		}
+	}
+}
+`;
+
 const modifyUserAsAdmin = (url: string | Function, adminToken: string, userId: string, newRole: string): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -613,20 +565,7 @@ const modifyUserAsAdmin = (url: string | Function, adminToken: string, userId: s
 			.set('Authorization', `Bearer ${adminToken}`)
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-				mutation Mutation($user: modifyUserAsAdminInput, $modifyUser: ModifyUserWithTokenAndRoleInput) {
-					modifyUserAsAdmin(user: $user, modifyUser: $modifyUser) {
-						token
-						message
-						user {
-							id
-							username
-							description
-							avatar
-						}
-					}
-				}
-				`,
+				query: modifyUserAsAdminQuery(),
 				variables: {
 					modifyUser: {
 						id: userId,
@@ -656,20 +595,7 @@ const modifyUserAsAdminWithIncorrectToken = (url: string | Function, adminToken:
 			.set('Authorization', `Bearer ${adminToken}`)
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-				mutation Mutation($user: modifyUserAsAdminInput, $modifyUser: ModifyUserWithTokenAndRoleInput) {
-					modifyUserAsAdmin(user: $user, modifyUser: $modifyUser) {
-						token
-						message
-						user {
-							id
-							username
-							description
-							avatar
-						}
-					}
-				}
-				`,
+				query: modifyUserAsAdminQuery(),
 				variables: {
 					modifyUser: {
 						id: userId,

@@ -59,44 +59,46 @@ const createChat = async (url: string | Function, userData: LoginMessageResponse
 	});
 };
 
+const joinChatQuery = () => `
+mutation Mutation($chatId: ID!, $userToken: String!) {
+	joinChat(chatId: $chatId, userToken: $userToken) {
+		id
+		created_date
+		users {
+			id
+			username
+			email
+			description
+			avatar
+			lastLogin
+		}
+		messages {
+			id
+			date
+			content
+			sender {
+				id
+				username
+				email
+				password
+				description
+				avatar
+				lastLogin
+				role
+				likes
+			}
+		}
+	}
+}
+`;
+
 const joinChat = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-			mutation Mutation($chatId: ID!, $userToken: String!) {
-				joinChat(chatId: $chatId, userToken: $userToken) {
-					id
-					created_date
-					users {
-						id
-						username
-						email
-						description
-						avatar
-						lastLogin
-					}
-					messages {
-						id
-						date
-						content
-						sender {
-							id
-							username
-							email
-							password
-							description
-							avatar
-							lastLogin
-							role
-							likes
-						}
-					}
-				}
-			}
-			`,
+				query: joinChatQuery(),
 				variables: {
 					chatId: chatId,
 					userToken: userData.token,
@@ -124,38 +126,7 @@ const joinChatWithWrongToken = async (url: string | Function, userData: LoginMes
 			.post('/graphql')
 			.set('Content-type', 'application/json')
 			.send({
-				query: `
-			mutation Mutation($chatId: ID!, $userToken: String!) {
-				joinChat(chatId: $chatId, userToken: $userToken) {
-					id
-					created_date
-					users {
-						id
-						username
-						email
-						description
-						avatar
-						lastLogin
-					}
-					messages {
-						id
-						date
-						content
-						sender {
-							id
-							username
-							email
-							password
-							description
-							avatar
-							lastLogin
-							role
-							likes
-						}
-					}
-				}
-			}
-			`,
+				query: joinChatQuery(),
 				variables: {
 					chatId: chatId,
 					userToken: userData.token,
@@ -181,35 +152,34 @@ const getChats = async (url: string | Function) => {
 			.send({
 				query: `
 						query {
-												chats {
-														id
-														created_date
-														users {
-														id
-														username
-														email
-														description
-														avatar
-														lastLogin
-														}
-														messages {
-														id
-														date
-														content
-														sender {
-																id
-																username
-																email
-																password
-																description
-																avatar
-																lastLogin
-																role
-														}
-														}
-												}
-												}
-
+							chats {
+								id
+								created_date
+								users {
+								id
+								username
+								email
+								description
+								avatar
+								lastLogin
+								}
+								messages {
+								id
+								date
+								content
+								sender {
+										id
+										username
+										email
+										password
+										description
+										avatar
+										lastLogin
+										role
+								}
+								}
+							}
+						}
 						`,
 			})
 			.expect(200, (err, res) => {
@@ -293,36 +263,36 @@ const subscriteToChat = async (url: string | Function, chatId: string) => {
 			.set('Content-Type', 'application/json')
 			.send({
 				query: `
-				subscription Subscription($chatId: ID!) {
-					messageCreated(chatId: $chatId) {
-						id
-						created_date
-						users {
+					subscription Subscription($chatId: ID!) {
+						messageCreated(chatId: $chatId) {
 							id
-							username
-							email
-							description
-							avatar
-							lastLogin
-						}
-						messages {
-							id
-							date
-							content
-							sender {
+							created_date
+							users {
 								id
 								username
 								email
-								password
 								description
 								avatar
 								lastLogin
-								role
-								likes
+							}
+							messages {
+								id
+								date
+								content
+								sender {
+									id
+									username
+									email
+									password
+									description
+									avatar
+									lastLogin
+									role
+									likes
+								}
 							}
 						}
 					}
-				}
 						`,
 				variables: {
 					chatId: chatId,
@@ -344,36 +314,36 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-							mutation Mutation($chatId: ID!, $userToken: String!) {
-								deleteChatAsAdmin(chatId: $chatId, userToken: $userToken) {
+					mutation Mutation($chatId: ID!, $userToken: String!) {
+						deleteChatAsAdmin(chatId: $chatId, userToken: $userToken) {
+							id
+							created_date
+							users {
+								id
+								username
+								email
+								description
+								avatar
+								lastLogin
+							}
+							messages {
+								id
+								date
+								content
+								sender {
 									id
-									created_date
-									users {
-										id
-										username
-										email
-										description
-										avatar
-										lastLogin
-									}
-									messages {
-										id
-										date
-										content
-										sender {
-											id
-											username
-											email
-											password
-											description
-											avatar
-											lastLogin
-											role
-											likes
-										}
-									}
+									username
+									email
+									password
+									description
+									avatar
+									lastLogin
+									role
+									likes
 								}
 							}
+						}
+					}
             `,
 				variables: {
 					chatId: chat.id,
