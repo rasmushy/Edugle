@@ -284,7 +284,22 @@ describe('Testing backend functions', () => {
 
 		it('should delete a user', async () => {
 			await deleteUser(app, userData);
-			await deleteUser(app, userData2);
+		});
+
+		it('should not delete a user with incorrect token', async () => {
+			await deleteUserWithIncorrectToken(app, '123');
+		});
+
+		it('should not delete a user as admin without admin token', async () => {
+			await deleteUserAsAdminWithOutAdminToken(
+				app,
+				'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1MjQwZjY4YjE3NTRjZDBmMTE2NDJhMiIsImlhdCI6MTY5NzI5MDMzMSwiZXhwIjoxNjk3MjkzOTMxfQ.XgCW807snKiVkdBtU8K4UPu4KTM5mjsEB1Sj3AfpyLU',
+				userData2.user.id as string,
+			);
+		});
+
+		it('should delete a user as admin', async () => {
+			await deleteUserAsAdmin(app, adminUserData, userData2.user.id as string);
 		});
 
 		it('should get message sender as deleted user', async () => {

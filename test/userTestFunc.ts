@@ -325,7 +325,7 @@ const deleteUserWithIncorrectToken = (url: string | Function, token: string): Pr
 					reject(err);
 				}
 				expect(res.body.data.deleteUser).toBe(null);
-				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				expect(res.body.errors[0].message).toBe('User deletion failed');
 				resolve(res.body);
 			});
 	});
@@ -370,12 +370,12 @@ const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageRespon
 	});
 };
 
-const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminData: LoginMessageResponse, deleteUserID: string): Promise<DBMessageResponse> => {
+const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminToken: string, deleteUserID: string): Promise<DBMessageResponse> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
 			.set('Content-type', 'application/json')
-			.set('Authorization', `Bearer ${adminData.token}`)
+			.set('Authorization', `Bearer ${adminToken}`)
 			.send({
 				query: `
 								mutation Mutation($adminToken: String!, $userToBeDeletedId: ID!) {
@@ -391,7 +391,7 @@ const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminData: L
 								}
 							`,
 				variables: {
-					adminToken: adminData.token,
+					adminToken: adminToken,
 					userToBeDeletedId: deleteUserID,
 				},
 			})
