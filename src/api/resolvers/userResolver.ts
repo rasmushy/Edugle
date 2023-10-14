@@ -1,10 +1,10 @@
 import {GraphQLError} from 'graphql';
 import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
-import dotenv from 'dotenv';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
 import {JsonWebTokenError} from 'jsonwebtoken';
-dotenv.config();
+import {PubSub, withFilter} from 'graphql-subscriptions';
+const pubsub = new PubSub();
 
 export default {
 	Query: {
@@ -33,7 +33,9 @@ export default {
 				if (!response.ok) {
 					return Error(`User not found`);
 				}
+
 				const user = await response.json();
+				pubsub.publish('USER_CREATED', {userSub: user});
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -68,6 +70,7 @@ export default {
 				if (!response.ok) {
 					return Error('Token validation failed');
 				}
+
 				const userFromAuth = await response.json();
 				return userFromAuth;
 			} catch (error) {
@@ -115,12 +118,6 @@ export default {
 					return Error('User registration failed');
 				}
 				const user = await response.json();
-				const pubUser = {
-					id: user.user.id,
-					email: user.user.email,
-					username: user.user.username,
-					password: user.user.password,
-				};
 				return user;
 			} catch (error) {
 				if (error instanceof Error) {
@@ -231,7 +228,7 @@ export default {
 				if (authUser.user.username === args.username) {
 					throw new Error('Why would you unlike yourself?');
 				}
-				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$dec: {likes: 1}});
+				const user = await userModel.findOneAndUpdate({username: args.username as string}, {$inc: {likes: -1}});
 				if (!user) {
 					throw new Error('Failed to add like');
 				}
@@ -309,6 +306,42 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
+		// USER ONLINE STATUS UPDATE
+		updateUserStatus: async (_parent: unknown, args: {token: string; status: string}) => {
+			let userStatus = false;
+			if (args.status === 'authenticated') {
+				userStatus = true;
+			}
+
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+
+			await userModel.findByIdAndUpdate(userId, {status: userStatus});
+			pubsub.publish('USER_ONLINE_STATUS', {userOnlineStatus: {userId: userId, userStatus: userStatus}});
+			return userStatus; // or the updated user
+		},
+	},
+	Subscription: {
+		userOnlineStatus: {
+			subscribe: withFilter(
+				() => pubsub.asyncIterator(['USER_ONLINE_STATUS']),
+				(payload, variables) => {
+					if (payload.userOnlineStatus.userId.toString() === variables.userId) {
+						return payload.userOnlineStatus.userStatus;
+					}
+				},
+			),
+		},
+		//likeUpdated
+		// subscribe: withFilter(
+		// 			() => pubsub.asyncIterator(['LIKE_UPDATED']),
+		//		(payload, variables) => {
+		// 			if (payload.userId.toString() === variables.userId) {
+		// 				return payload.likes;
 	},
 };
 

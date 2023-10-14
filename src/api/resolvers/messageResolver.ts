@@ -1,14 +1,12 @@
 import {GraphQLError} from 'graphql';
 import {Message, newMessage} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
-import dotenv from 'dotenv';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 import authUser from '../../utils/auth';
 import {PubSub} from 'graphql-subscriptions';
 import {User} from '../../interfaces/User';
-dotenv.config();
 
 const pubsub = new PubSub();
 const deletedUser: User = new userModel({

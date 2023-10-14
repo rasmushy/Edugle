@@ -1,7 +1,7 @@
 import {IUserIdWithToken} from './IUser';
 
 interface IContext {
-	userIdWithToken?: IUserIdWithToken;
+	user?: IUserIdWithToken;
 }
 
 export {IContext};

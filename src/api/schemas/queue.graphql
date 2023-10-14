@@ -1,0 +1,38 @@
+scalar Date
+
+type QueueEntry {
+	id: ID!
+	position: Int!
+	joinedAt: Date!
+	userId: User!
+}
+
+union ChatOrQueueResponse = PairedChatResponse | QueuePositionResponse
+
+type PairedChatResponse {
+	status: String!
+	chatId: ID!
+}
+
+type QueuePositionResponse {
+	status: String!
+	position: Int!
+}
+
+type Query {
+	queue: [QueueEntry]
+	queuePosition(token: String!): QueuePositionResponse!
+}
+
+#directive @rateLimit(max: Int, window: String) on FIELD_DEFINITION
+type Mutation {
+	initiateChat(token: String!): ChatOrQueueResponse #@rateLimit(max: 5, window: "1m")
+	dequeueUser(token: String!): QueuePositionResponse
+}
+
+type Subscription {
+	queuePositionUpdated(userId: ID!): Int
+	userJoinedQueue(token: String!): QueueEntry
+	userLeftQueue(token: String!): QueueEntry
+	chatStarted(userId: ID!): Chat
+}

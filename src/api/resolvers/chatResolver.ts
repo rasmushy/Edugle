@@ -4,7 +4,6 @@ import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 import authUser from '../../utils/auth';
-
 import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
@@ -44,16 +43,56 @@ export default {
 			const response = await chatModel.find({});
 			return response;
 		},
-		chatsByUser: async (_parent: unknown, args: {userId: string}) => {
-			if (!args.userId) {
-				return Error('No id');
+		chatByUser: async (_parent: unknown, args: {token: string}) => {
+			console.log('args.token', args.token);
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
 			}
-			const response = await chatModel.find({users: {$all: [args.userId]}});
-			return response;
+			const chats = await chatModel.find({users: userId});
+			const plainChats = chats.map((chat) => chat.toJSON() as Chat);
+			console.log(plainChats);
+			return plainChats[0];
+		},
+		chatById: async (_parent: unknown, args: {id: string}) => {
+			const response: Chat = (await chatModel.findById(args.id)) as Chat;
+			const newChat = {
+				...response.toJSON(),
+				users: response.users.map((user) => user._id),
+				messages: response.messages.map((message) => message._id),
+			};
+			return newChat;
 		},
 	},
 	Mutation: {
+		leaveChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
+			const chat = await chatModel.findById(args.chatId);
+			//console.log('leaveChat: chat=', chat);
+			if (!chat) {
+				throw new GraphQLError('Chat not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
+
+			const userId = authUser(args.userToken);
+			console.log('leaveChat: userId=', userId);
+			if (!userId) {
+				throw new GraphQLError('Not authorized', {
+					extensions: {code: 'NOT_AUTHORIZED'},
+				});
+			}
+
+			chat.users = chat.users.filter((user) => user._id.toString() !== userId);
+			const updatedChat = await chat.save();
+			//console.log('leaveChat: updatedChat=', updatedChat);
+			pubsub.publish('CHAT_ENDED', {chatEnded: updatedChat});
+			return updatedChat;
+		},
+
 		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
+			//console.log('joinChat: args=', args);
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
 				return Error('Chat not found');
@@ -66,18 +105,21 @@ export default {
 
 			const user = await userModel.findById(userId);
 
+			//console.log('joinChat: user=', user);
 			if (!user) {
 				return Error('User not found');
 			}
 
 			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
 
+			//console.log('joinChat: chatWithUser=', chatWithUser);
 			if (chatWithUser) {
 				return Error('User already in chat');
 			}
 
 			chat.users.push(user);
 			const updatedChat = await chat.save();
+			//console.log('updatedChat users', updatedChat.users);
 			return updatedChat;
 		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
@@ -92,6 +134,7 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
+			pubsub.publish('NEW_CHAT_STARTED', {newChatStarted: createChat});
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
@@ -114,6 +157,11 @@ export default {
 			}
 			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.chatId)) as Chat;
 			return deleteChat;
+		},
+	},
+	Subscription: {
+		chatEnded: {
+			subscribe: () => pubsub.asyncIterator('CHAT_ENDED'),
 		},
 	},
 };

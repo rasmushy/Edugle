@@ -1,6 +1,7 @@
 import {Request} from 'express';
 import jwt from 'jsonwebtoken';
 import {IUserIdWithToken} from '../interfaces/IUser';
+import {GraphQLError} from 'graphql';
 
 export default async (req: Request) => {
 	const bearer = req.headers.authorization;
@@ -14,18 +15,23 @@ export default async (req: Request) => {
 		return {};
 	}
 
-	const userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
-		id: string;
-	};
-
-	if (!userFromToken) {
-		return {};
+	try {
+		var userFromToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
+			id: string;
+		};
+	} catch (error) {
+		userFromToken = {id: ''};
 	}
 
-	const userIdWithToken: IUserIdWithToken = {
+	if (!userFromToken) {
+		return Error('User is not authenticated', {
+		});
+	}
+
+	const user: IUserIdWithToken = {
 		id: userFromToken.id,
 		token,
 	};
 
-	return userIdWithToken;
+	return user;
 };
