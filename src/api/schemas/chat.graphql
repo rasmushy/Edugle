@@ -15,7 +15,7 @@ type Query {
 	# Returns a list of all chats in the database
 	chats: [Chat]
 	# Returns all chats for a given user
-	chatByUser(token: String!): Chat
+	chatsByUser(userToken: String!): [Chat]
 	chatById(id: ID!): Chat
 }
 

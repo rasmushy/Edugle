@@ -43,18 +43,24 @@ export default {
 			const response = await chatModel.find({});
 			return response;
 		},
-		chatByUser: async (_parent: unknown, args: {token: string}) => {
-			console.log('args.token', args.token);
-			const userId = authUser(args.token);
+		chatsByUser: async (_parent: unknown, args: {userToken: string}) => {
+			console.log('args.token', args.userToken);
+			const userId = authUser(args.userToken);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
 			const chats = await chatModel.find({users: userId});
+			console.log('chats', chats);
+			if (!chats) {
+				throw new GraphQLError('No chats found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
 			const plainChats = chats.map((chat) => chat.toJSON() as Chat);
 			console.log(plainChats);
-			return plainChats[0];
+			return plainChats;
 		},
 		chatById: async (_parent: unknown, args: {id: string}) => {
 			const response: Chat = (await chatModel.findById(args.id)) as Chat;

@@ -230,39 +230,39 @@ const chatsByUser = async (url: string | Function, userData: LoginMessageRespons
 			.set('Content-type', 'application/json')
 			.send({
 				query: `
-					query ChatsByUser($userId: ID!) {
-						chatsByUser(userId: $userId) {
-							id
+					query Query($userToken: String!) {
+						chatsByUser(userToken: $userToken) {
 							created_date
-							users {
-								id
-								username
-								email
-								description
-								avatar
-								lastLogin
-							}
+							id
 							messages {
-								id
-								date
 								content
+								date
+								id
 								sender {
-									id
-									username
-									email
-									password
-									description
 									avatar
+									description
+									email
+									id
 									lastLogin
-									role
 									likes
+									password
+									role
+									username
 								}
+							}
+							users {
+								avatar
+								description
+								email
+								id
+								lastLogin
+								username
 							}
 						}
 					}
 						`,
 				variables: {
-					userId: userData.user.id,
+					userToken: userData.token,
 				},
 			})
 			.expect(200, (err, res) => {

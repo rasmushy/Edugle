@@ -107,6 +107,7 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
+				console.log(args.user);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -114,6 +115,7 @@ export default {
 					},
 					body: JSON.stringify(args.user),
 				});
+				console.log(response);
 				if (!response.ok) {
 					return Error('User registration failed');
 				}

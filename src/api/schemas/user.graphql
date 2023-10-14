@@ -75,8 +75,8 @@ input AdminWithTokenInput {
 }
 
 type UserStatus {
-		userId: ID!
-    isOnline: Boolean!
+	userId: ID!
+	isOnline: Boolean!
 }
 
 type Query {
