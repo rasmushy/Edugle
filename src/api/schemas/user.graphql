@@ -75,8 +75,8 @@ input AdminWithTokenInput {
 }
 
 type UserStatus {
-		userId: ID!
-    isOnline: Boolean!
+	userId: ID!
+	isOnline: Boolean!
 }
 
 type Query {
@@ -101,7 +101,7 @@ type Mutation {
 	# Deletes user corresponding to the given token
 	deleteUser(token: String): TokenMessage
 	# Deletes user corresponding to the given id as admin
-	deleteUserAsAdmin(user: deleteUserAsAdminInput, deleteUserID: ID!): TokenMessage
+	deleteUserAsAdmin(adminToken: String!, userToBeDeletedId: ID!): TokenMessage
 	# Add like to user
 	addLike(token: String, username: String!): Int
 	removeLike(token: String, username: String!): Int

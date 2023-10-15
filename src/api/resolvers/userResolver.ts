@@ -3,7 +3,6 @@ import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
 import {JsonWebTokenError} from 'jsonwebtoken';
-
 import {PubSub, withFilter} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
@@ -17,9 +16,7 @@ export default {
 					},
 				});
 				if (!response.ok) {
-					throw new GraphQLError('Failed to fetch users', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('Failed to fetch users');
 				}
 				const users = await response.json();
 				return users;
@@ -34,9 +31,7 @@ export default {
 			try {
 				const response = await fetch(`${process.env.AUTH_URL}/users/${args.id}`);
 				if (!response.ok) {
-					throw new GraphQLError(`User with ID ${args.id} not found`, {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error(`User not found`);
 				}
 
 				const user = await response.json();
@@ -54,9 +49,7 @@ export default {
 				const userId = authUser(args.token);
 				const response = await fetch(`${process.env.AUTH_URL}/users/${userId}`);
 				if (!response.ok) {
-					throw new GraphQLError(`User with ID ${userId} not found`, {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error(`User not found`);
 				}
 				const user = await response.json();
 				return user;
@@ -75,9 +68,7 @@ export default {
 					},
 				});
 				if (!response.ok) {
-					throw new GraphQLError('Token validation failed', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('Token validation failed');
 				}
 
 				const userFromAuth = await response.json();
@@ -116,6 +107,7 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
+				console.log(args.user);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -123,10 +115,9 @@ export default {
 					},
 					body: JSON.stringify(args.user),
 				});
+				console.log(response);
 				if (!response.ok) {
-					throw new GraphQLError('User registration failed', {
-						extensions: {code: 'VALIDATION_ERROR'},
-					});
+					return Error('User registration failed');
 				}
 				const user = await response.json();
 				return user;
@@ -137,20 +128,20 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		deleteUser: async (_parent: unknown, _args: {token: String}) => {
+		deleteUser: async (_parent: unknown, args: {token: String}) => {
 			try {
-				if (!_args.token) return null;
+				if (!args.token) {
+					return Error('No token');
+				}
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${_args.token}`,
+						Authorization: `Bearer ${args.token}`,
 					},
 				});
 				if (!response.ok) {
-					throw new GraphQLError('User deletion failed', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('User deletion failed');
 				}
 				const userFromDelete = await response.json();
 				return userFromDelete;
@@ -161,37 +152,34 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		deleteUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; deleteUserID: String}) => {
+		deleteUserAsAdmin: async (_parent: unknown, args: {adminToken: string; userToBeDeletedId: string}) => {
 			try {
-				if (!args.user.token) return null;
-				const userId = authUser(args.user.token);
+				const userId = convertToken(args.adminToken);
+				if (userId instanceof Error) {
+					return userId;
+				}
 				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
 					headers: {
-						Authorization: `Bearer ${args.user.token}`,
+						Authorization: `Bearer ${args.adminToken}`,
 					},
 				});
+				console.log(isUserAdmin);
 				const isAdmin = await isUserAdmin.json();
-				if (isAdmin.role.toLowerCase() !== 'admin') {
-					throw new GraphQLError('User is not an admin', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+				if (!isAdmin || isAdmin.role.toLowerCase() !== 'admin') {
+					return Error('User is not an admin');
 				}
-
-				const res = await fetch(`${process.env.AUTH_URL}/users/${args.deleteUserID}`, {
+				const res = await fetch(`${process.env.AUTH_URL}/users/${args.userToBeDeletedId}`, {
 					method: 'DELETE',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${args.user.token}`,
+						Authorization: `Bearer ${args.adminToken}`,
 						role: isAdmin.role.toLowerCase(), // add role from user object
 					},
 				});
 				if (!res.ok) {
-					throw new GraphQLError('User deletion failed', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('User deletion failed');
 				}
-				const userDeleted = await res.json();
-				return userDeleted;
+				return await res.json();
 			} catch (error) {
 				if (error instanceof Error) {
 					throw new Error(error.message);
@@ -256,12 +244,9 @@ export default {
 		},
 		modifyUser: async (_parent: unknown, args: {modifyUser: UserIdWithToken}) => {
 			try {
-				if (!args.modifyUser.token) return null;
-				const userId = authUser(args.modifyUser.token);
-				if (!userId) {
-					throw new GraphQLError('Not authorized', {
-						extensions: {code: 'NOT_AUTHORIZED'},
-					});
+				const userId = convertToken(args.modifyUser.token);
+				if (userId instanceof Error) {
+					return Error('Not authorized');
 				}
 				args.modifyUser.id = userId;
 				const res = await fetch(`${process.env.AUTH_URL}/users/`, {
@@ -289,8 +274,10 @@ export default {
 		},
 		modifyUserAsAdmin: async (_parent: unknown, args: {user: UserIdWithToken; modifyUser: ModifyUser}) => {
 			try {
-				if (!args.user.token) return null;
-				const userId = authUser(args.user.token);
+				const userId = convertToken(args.user.token);
+				if (userId instanceof Error) {
+					return Error('Not authorized');
+				}
 				const isUserAdmin = await fetch(`${process.env.AUTH_URL}/users/${userId}`, {
 					headers: {
 						Authorization: `Bearer ${args.user.token}`,
@@ -298,9 +285,7 @@ export default {
 				});
 				const isAdmin = await isUserAdmin.json();
 				if (isAdmin.role.toLowerCase() !== 'admin') {
-					throw new GraphQLError('User is not an admin', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('User is not an admin');
 				}
 				const res = await fetch(`${process.env.AUTH_URL}/users/${args.modifyUser.id}`, {
 					method: 'PUT',
@@ -312,14 +297,11 @@ export default {
 					body: JSON.stringify(args.modifyUser),
 				});
 				if (!res.ok) {
-					throw new GraphQLError('User modification failed', {
-						extensions: {code: 'NOT_FOUND'},
-					});
+					return Error('User modification failed');
 				}
 				const userModified = await res.json();
 				return userModified;
 			} catch (error) {
-				console.log(error);
 				if (error instanceof Error) {
 					throw new Error(error.message);
 				}
@@ -363,4 +345,15 @@ export default {
 		// 			if (payload.userId.toString() === variables.userId) {
 		// 				return payload.likes;
 	},
+};
+
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
 };

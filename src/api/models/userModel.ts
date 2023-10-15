@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import {User} from '../../interfaces/User';
 
-const messageModel = new mongoose.Schema<User>({
+const userModel = new mongoose.Schema<User>({
 	username: {
 		type: String,
 		required: true,
@@ -24,6 +24,9 @@ const messageModel = new mongoose.Schema<User>({
 		type: String,
 		required: false,
 	},
+	lastLogin: {
+		type: Date,
+	},
 	role: {
 		type: String,
 		default: 'user',
@@ -34,9 +37,9 @@ const messageModel = new mongoose.Schema<User>({
 	},
 });
 
-messageModel.index({id: 1}, {unique: true});
+userModel.index({id: 1}, {unique: true});
 
-messageModel.set('toJSON', {
+userModel.set('toJSON', {
 	transform: (document, returnedObject) => {
 		returnedObject.id = returnedObject._id;
 		delete returnedObject._id;
@@ -44,4 +47,4 @@ messageModel.set('toJSON', {
 	},
 });
 
-export default mongoose.model<User>('User', messageModel);
+export default mongoose.model<User>('User', userModel);

@@ -47,7 +47,7 @@ async function initiateChatLogic(userId: string) {
 			);
 
 			await queueModel.findByIdAndDelete(firstInQueue.id);
-
+			
 			pubsub.publish('CHAT_STARTED', {
 				updatedChat: {
 					eventType: 'CHAT_STARTED',

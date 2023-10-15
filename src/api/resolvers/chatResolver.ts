@@ -1,39 +1,72 @@
 import {GraphQLError} from 'graphql';
 import {PubSub, withFilter} from 'graphql-subscriptions';
 import {Chat} from '../../interfaces/Chat';
-import {UserIdWithToken, AdminIdWithToken} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 import authUser from '../../utils/auth';
 import pubsub from '../../utils/pubsub';
+import {User} from '../../interfaces/User';
+const deletedUser: User = new userModel({
+	id: 'DELETED',
+	
+}) as User;
+
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
+};
 
 export default {
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
-				const response = await userModel.find({_id: {$in: parent.users}}, {password: 0}).lean();
-				return response;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				const response = await userModel.find({_id: {$in: parent.users}}, {password: 0});
+/* 				const modifiedResponse = response.map((user) => {
+					if (user === null) {
+					console.log('user', user);
+						return deletedUser;
+					}
+
+					return user;
+				}); */
+
+				return response
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('Failed to get users for chat id: ' + parent._id);
 			}
 		},
 		messages: async (parent: Chat) => {
 			if (parent.messages.length < 1) return [];
 			try {
 				const response = await messageModel.find({_id: {$in: parent.messages}});
+/* 				const modifiedResponse = response.map((message) => {
+					if (!message.sender === "Deleted User") {
+						console.log('message.sender', message.sender);
+						message.sender = deletedUser;
+					}
+					return message;
+				}); */
 				const foundIds = response.map((message) => message._id.toString());
 				const missingIds = parent.messages.filter((id) => !foundIds.includes(id.toString()));
 				if (missingIds.length > 0) {
 					await chatModel.updateOne({_id: parent._id}, {$pullAll: {messages: missingIds}});
 				}
 				return response;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
+			} catch (error) {
+				if (error instanceof Error) {
+					throw new Error(error.message);
+				}
+				throw new Error('Failed to get messages for chat id: ' + parent._id);
 			}
 		},
 	},
@@ -42,18 +75,24 @@ export default {
 			const response = await chatModel.find({});
 			return response;
 		},
-		chatByUser: async (_parent: unknown, args: {token: string}) => {
-			console.log('chatByUser: args.token=', args.token);
-			const userId = authUser(args.token);
+		chatsByUser: async (_parent: unknown, args: {userToken: string}) => {
+			console.log('args.token', args.userToken);
+			const userId = authUser(args.userToken);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
 			const chats = await chatModel.find({users: userId});
+			console.log('chats', chats);
+			if (!chats) {
+				throw new GraphQLError('No chats found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
+			}
 			const plainChats = chats.map((chat) => chat.toJSON() as Chat);
 			console.log(plainChats);
-			return plainChats[0];
+			return plainChats;
 		},
 		chatById: async (_parent: unknown, args: {id: string}) => {
 			const response: Chat = (await chatModel.findById(args.id)) as Chat;
@@ -66,7 +105,7 @@ export default {
 		},
 	},
 	Mutation: {
-		leaveChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
+		leaveChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
 				console.log('leaveChat: chat not found', args.chatId);
@@ -75,7 +114,7 @@ export default {
 				});
 			}
 
-			const userId = authUser(args.token);
+			const userId = authUser(args.userToken);
 			const leavingUser = await userModel.findById(userId);
 			console.log('leaveChat: leavingUser=', leavingUser);
 			if (!leavingUser) {
@@ -149,13 +188,25 @@ export default {
 			});
 			return createChat;
 		},
-		deleteChatAsAdmin: async (_parent: unknown, args: {id: String; admin: AdminIdWithToken}) => {
-			if (!args.admin.token || args.admin.role !== 'admin') {
+		deleteChatAsAdmin: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
+			if (!args.userToken) {
+				throw new GraphQLError('No token', {
+					extensions: {code: 'NO_TOKEN'},
+				});
+			}
+			const userId = authUser(args.userToken);
+			if (!userId) {
+				throw new GraphQLError('Token conversion failed', {
+					extensions: {code: 'FAILED_TO_CONVERT'},
+				});
+			}
+			const user = await userModel.findById(userId);
+			if (!user || user.role !== 'admin') {
 				throw new GraphQLError('Not authorized', {
 					extensions: {code: 'NOT_AUTHORIZED'},
 				});
 			}
-			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.id)) as Chat;
+			const deleteChat: Chat = (await chatModel.findByIdAndDelete(args.chatId)) as Chat;
 			return deleteChat;
 		},
 	},
