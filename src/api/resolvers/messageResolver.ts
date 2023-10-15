@@ -19,8 +19,6 @@ export default {
 			subscribe: withFilter(
 				() => pubsub.asyncIterator(['MESSAGE_CREATED']),
 				(payload, variables) => {
-					console.log('messageCreated: payload', payload);
-					console.log('messageCreated: variables', variables);
 					return payload.messageCreated.chatId === variables.chatId;
 				},
 			),

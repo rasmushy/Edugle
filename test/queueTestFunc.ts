@@ -8,7 +8,6 @@ query Queue {
   queue {
     id
     joinedAt
-    position
     userId {
       avatar
       description

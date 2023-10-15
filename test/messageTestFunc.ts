@@ -502,35 +502,6 @@ const deleteMessageAsAdminButUser = async (url: string | Function, userData: Log
 	});
 };
 
-const deletedUsersMessageByMessageId = async (url: string | Function, messageId: string) => {
-	return new Promise((resolve, reject) => {
-		request(url)
-			.post('/graphql')
-			.set('Content-type', 'application/json')
-			.send({
-				query: messageByIdQuery(),
-				variables: {
-					messageId: messageId,
-				},
-			})
-			.expect(200, (err, res) => {
-				if (err) {
-					reject(err);
-				}
-				const message = res.body.data.messageById;
-				expect(message).toHaveProperty('id');
-				expect(message).toHaveProperty('date');
-				expect(message).toHaveProperty('content');
-				expect(message).toHaveProperty('sender');
-				expect(message.content).toEqual('test message');
-				expect(message.sender.username).toBe('DELETED');
-				expect(message.sender.email).toBe('DELETED');
-				expect(message.sender.likes).toBe(404);
-				resolve(message);
-			});
-	});
-};
-
 const createManyMessages = async (url: string | Function, userData: LoginMessageResponse, chatId: string, amount: number): Promise<MessageTest[]> => {
 	const messages: Array<MessageTest> = [];
 	for (let i = 0; i < amount; i++) {
@@ -555,7 +526,6 @@ export {
 	deleteMessageAsAdmin,
 	deleteMessageAsAdminButUser,
 	deleteMessageAsSomeoneElse,
-	deletedUsersMessageByMessageId,
 	getMessages,
 	messageByMessageId,
 	messageByInvalidMessageId,

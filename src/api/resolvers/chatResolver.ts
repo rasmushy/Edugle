@@ -136,19 +136,17 @@ export default {
 			return updatedChat;
 		},
 
-		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
+		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
-				console.log('joinChat: chat not found', args.chatId);
 				throw new GraphQLError('Chat not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
 
-			const userId = authUser(args.token);
+			const userId = authUser(args.userToken);
 			const user = await userModel.findById(userId);
 			if (!user || !userId) {
-				console.log('joinChat: user not found', userId);
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});

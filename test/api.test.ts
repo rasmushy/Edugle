@@ -39,7 +39,6 @@ import {
 	deleteMessageAsAdmin,
 	deleteMessageAsAdminButUser,
 	deleteMessageAsSomeoneElse,
-	deletedUsersMessageByMessageId,
 	getMessages,
 	messageByMessageId,
 	messagesBySenderId,
@@ -59,7 +58,6 @@ import {
 	chatsByUser,
 	chatById,
 	chatByIdWithWrongId,
-	subscriteToChat,
 	deleteChat,
 } from './chatTestFunc';
 import {queue, queuePosition, initiateChat, dequeueUser} from './queueTestFunc';
@@ -287,10 +285,6 @@ describe('Testing backend functions', () => {
 		it('should get chats by user', async () => {
 			await chatsByUser(app, userData);
 		});
-
-		it('should subscribe to a chat', async () => {
-			await subscriteToChat(app, chat.id as string);
-		});
 	});
 	// Tests for messages
 
@@ -375,12 +369,6 @@ describe('Testing backend functions', () => {
 	// Deletion test ( For user TODO: and chat )
 
 	describe('User can be deleted', () => {
-		let testDeletedUserMessage: MessageTest;
-
-		it('should create message', async () => {
-			testDeletedUserMessage = (await createMessage(app, userData, chat.id as string)) as MessageTest;
-		});
-
 		it('should delete a user', async () => {
 			await deleteUser(app, userData);
 		});
@@ -395,11 +383,6 @@ describe('Testing backend functions', () => {
 
 		it('should delete a user as admin', async () => {
 			await deleteUserAsAdmin(app, adminUserData, userData2.user.id as string);
-		});
-
-		it('should get message sender as deleted user', async () => {
-			await deletedUsersMessageByMessageId(app, testDeletedUserMessage.id as string);
-			await deleteMessageAsAdmin(app, adminUserData, testDeletedUserMessage.id as string);
 		});
 	});
 

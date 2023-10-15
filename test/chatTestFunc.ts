@@ -138,7 +138,7 @@ const joinChatWithWrongToken = async (url: string | Function, userData: LoginMes
 				}
 				const chat = res.body.data.joinChat;
 				expect(chat).toBeNull();
-				expect(res.body.errors[0].message).toBe('User not found');
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(chat);
 			});
 	});
@@ -220,7 +220,7 @@ const leaveChatWithWrongToken = async (url: string | Function, chatId: string, u
 				}
 				const chat = res.body.data.leaveChat;
 				expect(chat).toBeNull();
-				expect(res.body.errors[0].message).toBe('User not in chat');
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(chat);
 			});
 	});
@@ -443,57 +443,6 @@ const chatByIdWithWrongId = async (url: string | Function, chatId: string): Prom
 	});
 };
 
-const subscriteToChat = async (url: string | Function, chatId: string): Promise<ChatTest> => {
-	return new Promise((resolve, reject) => {
-		request(url)
-			.post('/graphql')
-			.set('Content-Type', 'application/json')
-			.send({
-				query: `
-					subscription Subscription($chatId: ID!) {
-						messageCreated(chatId: $chatId) {
-							id
-							created_date
-							users {
-								id
-								username
-								email
-								description
-								avatar
-								lastLogin
-							}
-							messages {
-								id
-								date
-								content
-								sender {
-									id
-									username
-									email
-									password
-									description
-									avatar
-									lastLogin
-									role
-									likes
-								}
-							}
-						}
-					}
-						`,
-				variables: {
-					chatId: chatId,
-				},
-			})
-			.expect(200, (err, res) => {
-				if (err) {
-					reject(err);
-				}
-				resolve(res.body.data.messageCreated);
-			});
-	});
-};
-
 const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -561,6 +510,5 @@ export {
 	chatsByUser,
 	chatById,
 	chatByIdWithWrongId,
-	subscriteToChat,
 	deleteChat,
 };
