@@ -1,5 +1,6 @@
 import {GraphQLError} from 'graphql';
 import {Chat} from '../../interfaces/Chat';
+import {User} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
@@ -7,18 +8,31 @@ import authUser from '../../utils/auth';
 import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
+const deletedUser: User = new userModel({
+	username: 'DELETED',
+	email: 'DELETED',
+	password: 'DELETED',
+	description: 'DELETED',
+	avatar: 'DELETED',
+	lastLogin: 1697133837252,
+	role: 'DELETED',
+	likes: 404,
+}) as User;
+
 export default {
 	Chat: {
 		users: async (parent: Chat) => {
-			try {
-				const response = await userModel.find({_id: {$in: parent.users}});
-				return response;
-			} catch (error) {
-				if (error instanceof Error) {
-					throw new Error(error.message);
+			const users = [];
+			for (const user of parent.users) {
+				const response = await fetch(`${process.env.AUTH_URL}/users/${user.toJSON()}`);
+				if (response === null || !response.ok) {
+					users.push(deletedUser);
+				} else {
+					const user = await response.json();
+					users.push(user);
 				}
-				throw new Error('Failed to get users for chat id: ' + parent._id);
 			}
+			return users;
 		},
 		messages: async (parent: Chat) => {
 			if (parent.messages.length < 1) return [];
@@ -64,6 +78,9 @@ export default {
 		},
 		chatById: async (_parent: unknown, args: {id: string}) => {
 			const response: Chat = (await chatModel.findById(args.id)) as Chat;
+			if (!response || response === null) {
+				Error('Chat not found');
+			}
 			const newChat = {
 				...response.toJSON(),
 				users: response.users.map((user) => user._id),
@@ -77,17 +94,17 @@ export default {
 			const chat = await chatModel.findById(args.chatId);
 			//console.log('leaveChat: chat=', chat);
 			if (!chat) {
-				throw new GraphQLError('Chat not found', {
-					extensions: {code: 'NOT_FOUND'},
-				});
+				return Error('Chat not found');
 			}
 
-			const userId = authUser(args.userToken);
+			const userId = convertToken(args.userToken);
 			console.log('leaveChat: userId=', userId);
 			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+				return Error('Not authorized');
+			}
+
+			if (!chat.users.some((user) => user._id.toString() === userId)) {
+				return Error('User not in chat');
 			}
 
 			chat.users = chat.users.filter((user) => user._id.toString() !== userId);

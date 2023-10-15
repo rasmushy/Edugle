@@ -48,7 +48,22 @@ import {
 	messagesByInvalidSenderId,
 	messagesByInvalidSenderToken,
 } from './messageTestFunc';
-import {createChat, joinChat, joinChatWithWrongToken, getChats, chatsByUser, subscriteToChat, deleteChat} from './chatTestFunc';
+import {
+	createChat,
+	joinChat,
+	joinChatWithWrongToken,
+	leaveChat,
+	leaveChatWithWrongChatId,
+	leaveChatWithWrongToken,
+	getChats,
+	chatsByUser,
+	chatById,
+	chatByIdWithWrongId,
+	subscriteToChat,
+	deleteChat,
+} from './chatTestFunc';
+import {queue, queuePosition, initiateChat, dequeueUser} from './queueTestFunc';
+import {checkToken, checkAdmin} from './authTestFunc';
 
 // Connections
 
@@ -59,6 +74,8 @@ beforeAll(async () => {
 afterAll(async () => {
 	await mongoose.connection.close();
 });
+
+// FOR TESTS TO WORK MAKE SURE YOU HAVE ADMIN ACCOUNT DEFINED AND CREATED IN DATABASE! ALSO CHATS AND MESSAGES NEED TO EMPYTY BEFORE TESTS!
 
 describe('Testing backend functions', () => {
 	// Reg and login before all tests
@@ -144,6 +161,16 @@ describe('Testing backend functions', () => {
 		});
 	});
 
+	describe('Testing auth functions', () => {
+		it('should check token', async () => {
+			await checkToken(app, userData.token as string, userData.user.id);
+		});
+
+		it('should check admin', async () => {
+			await checkAdmin(app, adminUserData.token as string);
+		});
+	});
+
 	describe('Testing user functions', () => {
 		// User to be used in tests
 
@@ -196,6 +223,26 @@ describe('Testing backend functions', () => {
 		});
 	});
 
+	// Tests for queue
+
+	describe('Testing queue functions', () => {
+		it('should initiate a chat', async () => {
+			await initiateChat(app, userData.token as string);
+		});
+
+		it('should show user in queue', async () => {
+			await queue(app);
+		});
+
+		it('should show users position in queue', async () => {
+			await queuePosition(app, userData.token as string);
+		});
+
+		it('should dequeue user', async () => {
+			await dequeueUser(app, userData.token as string);
+		});
+	});
+
 	// Tests for chats
 
 	let chat: ChatTest;
@@ -213,8 +260,28 @@ describe('Testing backend functions', () => {
 			await joinChatWithWrongToken(app, delUserData, chat.id as string);
 		});
 
+		it('should not leave a chat with invalid token', async () => {
+			await leaveChatWithWrongToken(app, chat.id as string, delUserData.token as string);
+		});
+
+		it('should not leave a chat with invalid chat id', async () => {
+			await leaveChatWithWrongChatId(app, '123', userData2.token as string);
+		});
+
+		it('should leave a chat', async () => {
+			await leaveChat(app, chat.id as string, userData2.token as string);
+		});
+
 		it('should get chats', async () => {
 			await getChats(app);
+		});
+
+		it('should get a chat by id', async () => {
+			await chatById(app, chat.id as string);
+		});
+
+		it('should not get a chat by invalid id', async () => {
+			await chatByIdWithWrongId(app, '123');
 		});
 
 		it('should get chats by user', async () => {

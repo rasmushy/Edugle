@@ -60,26 +60,6 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		validateToken: async (_parent: unknown, _args: unknown, user: UserIdWithToken) => {
-			try {
-				const response = await fetch(`${process.env.AUTH_URL}/users/token`, {
-					headers: {
-						Authorization: `Bearer ${user.token}`,
-					},
-				});
-				if (!response.ok) {
-					return Error('Token validation failed');
-				}
-
-				const userFromAuth = await response.json();
-				return userFromAuth;
-			} catch (error) {
-				if (error instanceof Error) {
-					throw new Error(error.message);
-				}
-				throw new Error('An unknown error occurred.');
-			}
-		},
 	},
 	Mutation: {
 		loginUser: async (_parent: unknown, args: {credentials: {email: string; password: string}}) => {
@@ -308,42 +288,6 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		// USER ONLINE STATUS UPDATE
-		updateUserStatus: async (_parent: unknown, args: {token: string; status: string}) => {
-			let userStatus = false;
-			if (args.status === 'authenticated') {
-				userStatus = true;
-			}
-
-			const userId = authUser(args.token);
-			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
-			}
-
-			await userModel.findByIdAndUpdate(userId, {status: userStatus});
-			pubsub.publish('USER_ONLINE_STATUS', {userOnlineStatus: {userId: userId, userStatus: userStatus}});
-			return userStatus; // or the updated user
-		},
-	},
-	Subscription: {
-		userOnlineStatus: {
-			subscribe: withFilter(
-				() => pubsub.asyncIterator(['USER_ONLINE_STATUS']),
-				(payload, variables) => {
-					if (payload.userOnlineStatus.userId.toString() === variables.userId) {
-						return payload.userOnlineStatus.userStatus;
-					}
-				},
-			),
-		},
-		//likeUpdated
-		// subscribe: withFilter(
-		// 			() => pubsub.asyncIterator(['LIKE_UPDATED']),
-		//		(payload, variables) => {
-		// 			if (payload.userId.toString() === variables.userId) {
-		// 				return payload.likes;
 	},
 };
 

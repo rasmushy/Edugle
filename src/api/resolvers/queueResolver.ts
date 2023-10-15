@@ -4,6 +4,7 @@ import {GraphQLError} from 'graphql';
 import {QueueEntry, QueueResponse} from '../../interfaces/Queue';
 import authUser from '../../utils/auth';
 import chatModel from '../models/chatModel';
+import userModel from '../models/userModel';
 import {User} from '../../interfaces/User';
 import {PubSub} from 'graphql-subscriptions';
 
@@ -13,6 +14,17 @@ TODO: have subscriptions for the following events:
 
 TODO: refactor the code to make it more readable
 */
+
+const deletedUser: User = new userModel({
+	username: 'DELETED',
+	email: 'DELETED',
+	password: 'DELETED',
+	description: 'DELETED',
+	avatar: 'DELETED',
+	lastLogin: 1697133837252,
+	role: 'DELETED',
+	likes: 404,
+}) as User;
 
 const pubsub = new PubSub();
 
@@ -37,6 +49,16 @@ function transformQueueEntry(queueEntry: QueueEntry): any {
 }
 
 export default {
+	QueueEntry: {
+		userId: async (parent: QueueEntry) => {
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.userId.id}`);
+			if (response === null || !response.ok) {
+				return deletedUser;
+			}
+			const user = await response.json();
+			return user;
+		},
+	},
 	ChatOrQueueResponse: {
 		__resolveType(obj: QueueResponse) {
 			if (obj.chatId !== undefined) {
@@ -55,14 +77,17 @@ export default {
 		},
 		queuePosition: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
-			if(!userId) {
-				return Error('Not authorized');
+			if (!userId) {
+				throw new GraphQLError('Not authorized');
 			}
-			const userInQueue = await queueModel.findById(userId);
+
+			const userInQueue = await queueModel.findOne({userId});
 			if (!userInQueue) {
 				return {status: 'Not in Queue', position: 0};
 			}
-			return {status: 'In queue', position: userInQueue.position + 1};
+
+			const position = await queueModel.countDocuments({joinedAt: {$lt: userInQueue.joinedAt}});
+			return {status: 'In queue', position: position + 1};
 		},
 	},
 	Mutation: {
@@ -79,7 +104,7 @@ export default {
 			const userInQueue = await queueModel.findOne({userId: userId});
 			if (userInQueue) {
 				console.log('initiateChat: userInQueue=', userInQueue.id);
-				return ({status: 'In queue', position: userInQueue.position + 1});
+				return {status: 'In queue', position: userInQueue.position + 1};
 			}
 
 			// Find first user in queue
@@ -120,16 +145,14 @@ export default {
 		// Return pos 0 if not in queue, else pos > 0.
 		dequeueUser: async (_parent: unknown, args: {token: string}) => {
 			try {
-				
 				const userId = authUser(args.token);
-				if(!userId) 
-				return Error('Not authorized');
-			
+				if (!userId) return Error('Not authorized');
+
 				const userInQueue = await queueModel.findOne({userId: userId}); // check if user is in the queue
 				if (!userInQueue) {
 					return {status: 'User not in queue', position: 0};
-				};
-				
+				}
+
 				console.log('userInQueue', userInQueue);
 				await queueModel.findOneAndDelete({userId: userId}); // remove user from the queue
 				// Update the positions of the remaining users in the queue
@@ -139,17 +162,17 @@ export default {
 					await entry.save();
 				});
 				console.log('queueEntries', queueEntries);
-				
+
 				const newPosition = await queueModel.countDocuments();
 				--globalQueueCounter;
 				console.log('newPosition', newPosition);
-				
+
 				// Notify the next user in line, if any
 				const usersToUpdate = await queueModel.find({position: {$gt: userInQueue.position}});
 				usersToUpdate.forEach((user) => {
 					pubsub.publish(`QUEUE_POSITION_${user.userId}`, {position: user.position - 1, userId: user.userId});
 				});
-				
+
 				return {status: 'User left from queue', position: 0};
 			} catch (error) {
 				return error;

@@ -144,6 +144,112 @@ const joinChatWithWrongToken = async (url: string | Function, userData: LoginMes
 	});
 };
 
+const leaveChatQuery = () => `
+mutation Mutation($chatId: ID!, $userToken: String!) {
+  leaveChat(chatId: $chatId, userToken: $userToken) {
+    created_date
+    id
+    messages {
+      content
+      date
+      id
+      sender {
+        avatar
+        description
+        email
+        id
+        lastLogin
+        likes
+        password
+        role
+        username
+      }
+    }
+    users {
+      avatar
+      description
+      email
+      id
+      lastLogin
+      username
+    }
+  }
+}
+`;
+
+const leaveChat = async (url: string | Function, chatId: string, userToken: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				resolve(chat);
+			});
+	});
+};
+
+const leaveChatWithWrongToken = async (url: string | Function, chatId: string, userToken: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('User not in chat');
+				resolve(chat);
+			});
+	});
+};
+
+const leaveChatWithWrongChatId = async (url: string | Function, chatId: string, userToken: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				resolve(chat);
+			});
+	});
+};
+
 const getChats = async (url: string | Function) => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -256,6 +362,87 @@ const chatsByUser = async (url: string | Function, userData: LoginMessageRespons
 	});
 };
 
+const chatByIdQuery = () => `
+	query Query($chatByIdId: ID!) {
+		chatById(id: $chatByIdId) {
+			created_date
+			id
+			messages {
+				content
+				date
+				id
+				sender {
+					avatar
+					description
+					email
+					id
+					lastLogin
+					likes
+					password
+					role
+					username
+				}
+			}
+			users {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				username
+			}
+		}
+	}
+`;
+
+const chatById = async (url: string | Function, chatId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: chatByIdQuery(),
+				variables: {
+					chatByIdId: chatId,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.chatById;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				expect(chat).toHaveProperty('messages');
+				resolve(chat);
+			});
+	});
+};
+
+const chatByIdWithWrongId = async (url: string | Function, chatId: string) => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: chatByIdQuery(),
+				variables: {
+					chatByIdId: chatId,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.chatById;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				resolve(chat);
+			});
+	});
+};
+
 const subscriteToChat = async (url: string | Function, chatId: string) => {
 	return new Promise((resolve, reject) => {
 		request(url)
@@ -363,4 +550,17 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 	});
 };
 
-export {createChat, joinChat, joinChatWithWrongToken, getChats, chatsByUser, subscriteToChat, deleteChat};
+export {
+	createChat,
+	joinChat,
+	joinChatWithWrongToken,
+	leaveChat,
+	leaveChatWithWrongChatId,
+	leaveChatWithWrongToken,
+	getChats,
+	chatsByUser,
+	chatById,
+	chatByIdWithWrongId,
+	subscriteToChat,
+	deleteChat,
+};
