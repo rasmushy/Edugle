@@ -11,6 +11,13 @@ input CreateChatInput {
 	users: [ID!]!
 }
 
+type UpdateChatPayload {
+	eventType: String!
+	message: String!
+	chat: Chat
+	timestamp: Date!
+}
+
 type Query {
 	# Returns a list of all chats in the database
 	chats: [Chat]
@@ -27,5 +34,5 @@ type Mutation {
 }
 
 type Subscription {
-	chatEnded: Chat
+	updatedChat(userId: ID!): UpdateChatPayload
 }

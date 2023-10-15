@@ -2,7 +2,6 @@ scalar Date
 
 type QueueEntry {
 	id: ID!
-	position: Int!
 	joinedAt: Date!
 	userId: User!
 }
@@ -19,6 +18,12 @@ type QueuePositionResponse {
 	position: Int!
 }
 
+type QueuePositionPayload {
+	message: String!
+	timestamp: Date!
+}
+
+
 type Query {
 	queue: [QueueEntry]
 	queuePosition(token: String!): QueuePositionResponse!
@@ -31,8 +36,5 @@ type Mutation {
 }
 
 type Subscription {
-	queuePositionUpdated(userId: ID!): Int
-	userJoinedQueue(token: String!): QueueEntry
-	userLeftQueue(token: String!): QueueEntry
-	chatStarted(userId: ID!): Chat
+	queuePositionUpdated(userId: ID!): QueuePositionPayload
 }
