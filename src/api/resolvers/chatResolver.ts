@@ -12,7 +12,7 @@ export default {
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
-				const response = await userModel.find({_id: {$in: parent.users}});
+				const response = await userModel.find({_id: {$in: parent.users}}, {password: 0}).lean();
 				return response;
 			} catch (error: any) {
 				throw new GraphQLError(error.statusText, {

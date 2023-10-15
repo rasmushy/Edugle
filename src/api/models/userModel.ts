@@ -34,6 +34,8 @@ const messageModel = new mongoose.Schema<User>({
 	},
 });
 
+messageModel.index({id: 1}, {unique: true});
+
 messageModel.set('toJSON', {
 	transform: (document, returnedObject) => {
 		returnedObject.id = returnedObject._id;
