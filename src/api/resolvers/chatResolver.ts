@@ -1,7 +1,6 @@
 import {GraphQLError} from 'graphql';
 import {withFilter} from 'graphql-subscriptions';
 import {Chat} from '../../interfaces/Chat';
-import {User} from '../../interfaces/User';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';

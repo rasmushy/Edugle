@@ -1,4 +1,3 @@
-// eslint-disable-next-line node/no-unpublished-import
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';

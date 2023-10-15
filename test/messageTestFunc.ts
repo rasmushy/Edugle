@@ -1,7 +1,7 @@
 import request from 'supertest';
 import {MessageTest} from '../src/interfaces/Message';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
-import mongoose, {mongo} from 'mongoose';
+import mongoose from 'mongoose';
 
 const createMessageQuery = () => `
 	mutation CreateMessage($message: MessageInput!, $chatId: ID!) {

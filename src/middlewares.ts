@@ -1,11 +1,10 @@
 import {NextFunction, Request, Response} from 'express';
 import ErrorResponse from './interfaces/ErrorResponse';
 import jwt from 'jsonwebtoken';
-import {OutputUser, TokenUser, User} from './interfaces/User';
+import {TokenUser, User} from './interfaces/User';
 import {GraphQLError} from 'graphql';
 import userModel from './api/models/userModel';
 import CustomError from './classes/CustomError';
-import {getCookie, hasCookie} from 'cookies-next';
 
 export function notFound(req: Request, res: Response, next: NextFunction) {
 	res.status(404);

@@ -3,7 +3,7 @@ import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
 import {JsonWebTokenError} from 'jsonwebtoken';
-import {PubSub, withFilter} from 'graphql-subscriptions';
+import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
