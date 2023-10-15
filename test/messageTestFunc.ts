@@ -23,7 +23,7 @@ const createMessageQuery = () => `
 	}
 `;
 
-const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
+const createMessage = async (url: string | Function, userData: LoginMessageResponse, chatId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -54,7 +54,7 @@ const createMessage = async (url: string | Function, userData: LoginMessageRespo
 	});
 };
 
-const createMessageWithInvalidToken = async (url: string | Function, chatId: string) => {
+const createMessageWithInvalidToken = async (url: string | Function, chatId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -80,7 +80,7 @@ const createMessageWithInvalidToken = async (url: string | Function, chatId: str
 	});
 };
 
-const createMessageWithInvalidChatId = async (url: string | Function, userData: LoginMessageResponse) => {
+const createMessageWithInvalidChatId = async (url: string | Function, userData: LoginMessageResponse): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -106,7 +106,7 @@ const createMessageWithInvalidChatId = async (url: string | Function, userData: 
 	});
 };
 
-const getMessages = async (url: string | Function, amount: number) => {
+const getMessages = async (url: string | Function, amount: number): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -170,7 +170,7 @@ const messageByIdQuery = () => `
 	}
 `;
 
-const messageByMessageId = async (url: string | Function, messageId: string) => {
+const messageByMessageId = async (url: string | Function, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -196,7 +196,7 @@ const messageByMessageId = async (url: string | Function, messageId: string) => 
 	});
 };
 
-const messageByInvalidMessageId = async (url: string | Function, messageId: string) => {
+const messageByInvalidMessageId = async (url: string | Function, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -239,7 +239,7 @@ const messageBySenderIdQuery = () => `
 	}
 `;
 
-const messagesBySenderId = async (url: string | Function, userId: string) => {
+const messagesBySenderId = async (url: string | Function, userId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -266,7 +266,7 @@ const messagesBySenderId = async (url: string | Function, userId: string) => {
 	});
 };
 
-const messagesByInvalidSenderId = async (url: string | Function, userId: string) => {
+const messagesByInvalidSenderId = async (url: string | Function, userId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -309,7 +309,7 @@ const messageBySenderTokenQuery = () => `
 	}
 `;
 
-const messagesBySenderToken = async (url: string | Function, userToken: string, userId: string) => {
+const messagesBySenderToken = async (url: string | Function, userToken: string, userId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -336,7 +336,7 @@ const messagesBySenderToken = async (url: string | Function, userToken: string, 
 	});
 };
 
-const messagesByInvalidSenderToken = async (url: string | Function, userToken: string) => {
+const messagesByInvalidSenderToken = async (url: string | Function, userToken: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -379,7 +379,7 @@ const deleteMessageQuery = () => `
 	}
 `;
 
-const deleteMessage = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+const deleteMessage = async (url: string | Function, userData: LoginMessageResponse, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -407,7 +407,7 @@ const deleteMessage = async (url: string | Function, userData: LoginMessageRespo
 	});
 };
 
-const deleteMessageAsSomeoneElse = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+const deleteMessageAsSomeoneElse = async (url: string | Function, userData: LoginMessageResponse, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -451,7 +451,7 @@ const deleteMessageAsAdminQuery = () => `
 	}
 `;
 
-const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessageResponse, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -479,7 +479,7 @@ const deleteMessageAsAdmin = async (url: string | Function, userData: LoginMessa
 	});
 };
 
-const deleteMessageAsAdminButUser = async (url: string | Function, userData: LoginMessageResponse, messageId: string) => {
+const deleteMessageAsAdminButUser = async (url: string | Function, userData: LoginMessageResponse, messageId: string): Promise<MessageTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -531,7 +531,7 @@ const deletedUsersMessageByMessageId = async (url: string | Function, messageId:
 	});
 };
 
-const createManyMessages = async (url: string | Function, userData: LoginMessageResponse, chatId: string, amount: number) => {
+const createManyMessages = async (url: string | Function, userData: LoginMessageResponse, chatId: string, amount: number): Promise<MessageTest[]> => {
 	const messages: Array<MessageTest> = [];
 	for (let i = 0; i < amount; i++) {
 		messages.push((await createMessage(url, userData, chatId)) as MessageTest);

@@ -1,6 +1,5 @@
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
-import exp from 'constants';
 
 const checkTokenQuery = `
 query CheckToken($token: String!) {

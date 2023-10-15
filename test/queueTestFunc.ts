@@ -1,6 +1,7 @@
 // eslint-disable-next-line node/no-unpublished-import
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
+import {QueueEntryTest} from '../src/interfaces/Queue';
 
 const queueQuery = () => `
 query Queue {
@@ -23,7 +24,7 @@ query Queue {
 }
 `;
 
-const queue = (url: string | Function): Promise<UserTest> => {
+const queue = (url: string | Function): Promise<QueueEntryTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -36,8 +37,7 @@ const queue = (url: string | Function): Promise<UserTest> => {
 					reject(err);
 				}
 				expect(res.body.data.queue).toHaveLength(1);
-				console.log('tärkee', res.body.data.queue);
-				resolve(res.body);
+				resolve(res.body.data.queue);
 			});
 	});
 };
@@ -67,7 +67,7 @@ const queuePosition = (url: string | Function, userToken: string): Promise<UserT
 					reject(err);
 				}
 				expect(res.body.data.queuePosition.position).toBe(1);
-				resolve(res.body);
+				resolve(res.body.data.queuePosition);
 			});
 	});
 };
@@ -87,7 +87,7 @@ mutation Mutation($token: String!) {
 }
 `;
 
-const initiateChat = (url: string | Function, userToken: string): Promise<UserTest> => {
+const initiateChat = (url: string | Function, userToken: string): Promise<QueueEntryTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -103,7 +103,7 @@ const initiateChat = (url: string | Function, userToken: string): Promise<UserTe
 					reject(err);
 				}
 				expect(res.body.data.initiateChat.status).toBe('Queue');
-				resolve(res.body);
+				resolve(res.body.data.initiateChat);
 			});
 	});
 };
@@ -117,7 +117,7 @@ mutation Mutation($token: String!) {
 }
 `;
 
-const dequeueUser = (url: string | Function, userToken: string): Promise<UserTest> => {
+const dequeueUser = (url: string | Function, userToken: string): Promise<QueueEntryTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -133,7 +133,7 @@ const dequeueUser = (url: string | Function, userToken: string): Promise<UserTes
 					reject(err);
 				}
 				expect(res.body.data.dequeueUser.status).toBe('User left from queue');
-				resolve(res.body);
+				resolve(res.body.data.dequeueUser);
 			});
 	});
 };

@@ -2,7 +2,7 @@ import request from 'supertest';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import {ChatTest} from '../src/interfaces/Chat';
 
-const createChat = async (url: string | Function, userData: LoginMessageResponse) => {
+const createChat = async (url: string | Function, userData: LoginMessageResponse): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -92,7 +92,7 @@ mutation Mutation($chatId: ID!, $userToken: String!) {
 }
 `;
 
-const joinChat = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
+const joinChat = async (url: string | Function, userData: LoginMessageResponse, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -120,7 +120,7 @@ const joinChat = async (url: string | Function, userData: LoginMessageResponse, 
 	});
 };
 
-const joinChatWithWrongToken = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
+const joinChatWithWrongToken = async (url: string | Function, userData: LoginMessageResponse, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -177,7 +177,7 @@ mutation Mutation($chatId: ID!, $userToken: String!) {
 }
 `;
 
-const leaveChat = async (url: string | Function, chatId: string, userToken: string) => {
+const leaveChat = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -202,7 +202,7 @@ const leaveChat = async (url: string | Function, chatId: string, userToken: stri
 	});
 };
 
-const leaveChatWithWrongToken = async (url: string | Function, chatId: string, userToken: string) => {
+const leaveChatWithWrongToken = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -226,7 +226,7 @@ const leaveChatWithWrongToken = async (url: string | Function, chatId: string, u
 	});
 };
 
-const leaveChatWithWrongChatId = async (url: string | Function, chatId: string, userToken: string) => {
+const leaveChatWithWrongChatId = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -250,7 +250,7 @@ const leaveChatWithWrongChatId = async (url: string | Function, chatId: string, 
 	});
 };
 
-const getChats = async (url: string | Function) => {
+const getChats = async (url: string | Function): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -303,7 +303,7 @@ const getChats = async (url: string | Function) => {
 	});
 };
 
-const chatsByUser = async (url: string | Function, userData: LoginMessageResponse) => {
+const chatsByUser = async (url: string | Function, userData: LoginMessageResponse): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -395,7 +395,7 @@ const chatByIdQuery = () => `
 	}
 `;
 
-const chatById = async (url: string | Function, chatId: string) => {
+const chatById = async (url: string | Function, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -420,7 +420,7 @@ const chatById = async (url: string | Function, chatId: string) => {
 	});
 };
 
-const chatByIdWithWrongId = async (url: string | Function, chatId: string) => {
+const chatByIdWithWrongId = async (url: string | Function, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -443,7 +443,7 @@ const chatByIdWithWrongId = async (url: string | Function, chatId: string) => {
 	});
 };
 
-const subscriteToChat = async (url: string | Function, chatId: string) => {
+const subscriteToChat = async (url: string | Function, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -494,7 +494,7 @@ const subscriteToChat = async (url: string | Function, chatId: string) => {
 	});
 };
 
-const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest) => {
+const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
