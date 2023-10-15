@@ -9,10 +9,11 @@ The target audience for this application is students, ranging from teenagers to 
 ## How to run tests:
 
 To run tests you will need to have admin profile manually added to your databases users collection like this:
+
 {
 username: "admin",
 email: "admin@test.fi",
-password: "admin
+password: "admin"
 }
 
 Also every other collection should be empty before tests are ran.
