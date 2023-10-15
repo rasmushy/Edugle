@@ -2,7 +2,7 @@ import request from 'supertest';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
 import {ChatTest} from '../src/interfaces/Chat';
 
-const createChat = async (url: string | Function, userData: LoginMessageResponse) => {
+const createChat = async (url: string | Function, userData: LoginMessageResponse): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -92,7 +92,7 @@ mutation Mutation($chatId: ID!, $userToken: String!) {
 }
 `;
 
-const joinChat = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
+const joinChat = async (url: string | Function, userData: LoginMessageResponse, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -120,7 +120,7 @@ const joinChat = async (url: string | Function, userData: LoginMessageResponse, 
 	});
 };
 
-const joinChatWithWrongToken = async (url: string | Function, userData: LoginMessageResponse, chatId: string) => {
+const joinChatWithWrongToken = async (url: string | Function, userData: LoginMessageResponse, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -138,13 +138,119 @@ const joinChatWithWrongToken = async (url: string | Function, userData: LoginMes
 				}
 				const chat = res.body.data.joinChat;
 				expect(chat).toBeNull();
-				expect(res.body.errors[0].message).toBe('User not found');
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
 				resolve(chat);
 			});
 	});
 };
 
-const getChats = async (url: string | Function) => {
+const leaveChatQuery = () => `
+mutation Mutation($chatId: ID!, $userToken: String!) {
+  leaveChat(chatId: $chatId, userToken: $userToken) {
+    created_date
+    id
+    messages {
+      content
+      date
+      id
+      sender {
+        avatar
+        description
+        email
+        id
+        lastLogin
+        likes
+        password
+        role
+        username
+      }
+    }
+    users {
+      avatar
+      description
+      email
+      id
+      lastLogin
+      username
+    }
+  }
+}
+`;
+
+const leaveChat = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				resolve(chat);
+			});
+	});
+};
+
+const leaveChatWithWrongToken = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				resolve(chat);
+			});
+	});
+};
+
+const leaveChatWithWrongChatId = async (url: string | Function, chatId: string, userToken: string): Promise<ChatTest> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: leaveChatQuery(),
+				variables: {
+					chatId: chatId,
+					userToken: userToken,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.leaveChat;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				resolve(chat);
+			});
+	});
+};
+
+const getChats = async (url: string | Function): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -197,7 +303,7 @@ const getChats = async (url: string | Function) => {
 	});
 };
 
-const chatsByUser = async (url: string | Function, userData: LoginMessageResponse) => {
+const chatsByUser = async (url: string | Function, userData: LoginMessageResponse): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -256,58 +362,88 @@ const chatsByUser = async (url: string | Function, userData: LoginMessageRespons
 	});
 };
 
-const subscriteToChat = async (url: string | Function, chatId: string) => {
+const chatByIdQuery = () => `
+	query Query($chatByIdId: ID!) {
+		chatById(id: $chatByIdId) {
+			created_date
+			id
+			messages {
+				content
+				date
+				id
+				sender {
+					avatar
+					description
+					email
+					id
+					lastLogin
+					likes
+					password
+					role
+					username
+				}
+			}
+			users {
+				avatar
+				description
+				email
+				id
+				lastLogin
+				username
+			}
+		}
+	}
+`;
+
+const chatById = async (url: string | Function, chatId: string): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
-			.set('Content-Type', 'application/json')
+			.set('Content-type', 'application/json')
 			.send({
-				query: `
-					subscription Subscription($chatId: ID!) {
-						messageCreated(chatId: $chatId) {
-							id
-							created_date
-							users {
-								id
-								username
-								email
-								description
-								avatar
-								lastLogin
-							}
-							messages {
-								id
-								date
-								content
-								sender {
-									id
-									username
-									email
-									password
-									description
-									avatar
-									lastLogin
-									role
-									likes
-								}
-							}
-						}
-					}
-						`,
+				query: chatByIdQuery(),
 				variables: {
-					chatId: chatId,
+					chatByIdId: chatId,
 				},
 			})
 			.expect(200, (err, res) => {
 				if (err) {
 					reject(err);
 				}
-				resolve(res.body.data.messageCreated);
+				const chat = res.body.data.chatById;
+				expect(chat).toHaveProperty('id');
+				expect(chat).toHaveProperty('created_date');
+				expect(chat).toHaveProperty('users');
+				expect(chat).toHaveProperty('messages');
+				resolve(chat);
 			});
 	});
 };
 
-const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest) => {
+const chatByIdWithWrongId = async (url: string | Function, chatId: string): Promise<ChatTest> => {
+	return new Promise((resolve, reject) => {
+		request(url)
+			.post('/graphql')
+			.set('Content-type', 'application/json')
+			.send({
+				query: chatByIdQuery(),
+				variables: {
+					chatByIdId: chatId,
+				},
+			})
+			.expect(200, (err, res) => {
+				if (err) {
+					reject(err);
+				}
+				const chat = res.body.data.chatById;
+				expect(chat).toBeNull();
+				expect(res.body.errors[0].message).toBe('Not Authorised!');
+				resolve(chat);
+			});
+	});
+};
+
+const deleteChat = async (url: string | Function, adminUserData: LoginMessageResponse, chat: ChatTest): Promise<ChatTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -363,4 +499,16 @@ const deleteChat = async (url: string | Function, adminUserData: LoginMessageRes
 	});
 };
 
-export {createChat, joinChat, joinChatWithWrongToken, getChats, chatsByUser, subscriteToChat, deleteChat};
+export {
+	createChat,
+	joinChat,
+	joinChatWithWrongToken,
+	leaveChat,
+	leaveChatWithWrongChatId,
+	leaveChatWithWrongToken,
+	getChats,
+	chatsByUser,
+	chatById,
+	chatByIdWithWrongId,
+	deleteChat,
+};

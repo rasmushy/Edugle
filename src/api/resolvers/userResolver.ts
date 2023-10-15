@@ -3,7 +3,7 @@ import {ModifyUser, User, UserIdWithToken} from '../../interfaces/User';
 import authUser from '../../utils/auth';
 import userModel from '../models/userModel';
 import {JsonWebTokenError} from 'jsonwebtoken';
-import {PubSub, withFilter} from 'graphql-subscriptions';
+import {PubSub} from 'graphql-subscriptions';
 const pubsub = new PubSub();
 
 export default {
@@ -60,26 +60,6 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		validateToken: async (_parent: unknown, _args: unknown, user: UserIdWithToken) => {
-			try {
-				const response = await fetch(`${process.env.AUTH_URL}/users/token`, {
-					headers: {
-						Authorization: `Bearer ${user.token}`,
-					},
-				});
-				if (!response.ok) {
-					return Error('Token validation failed');
-				}
-
-				const userFromAuth = await response.json();
-				return userFromAuth;
-			} catch (error) {
-				if (error instanceof Error) {
-					throw new Error(error.message);
-				}
-				throw new Error('An unknown error occurred.');
-			}
-		},
 	},
 	Mutation: {
 		loginUser: async (_parent: unknown, args: {credentials: {email: string; password: string}}) => {
@@ -107,7 +87,6 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
-				console.log(args.user);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -115,7 +94,6 @@ export default {
 					},
 					body: JSON.stringify(args.user),
 				});
-				console.log(response);
 				if (!response.ok) {
 					return Error('User registration failed');
 				}
@@ -163,7 +141,6 @@ export default {
 						Authorization: `Bearer ${args.adminToken}`,
 					},
 				});
-				console.log(isUserAdmin);
 				const isAdmin = await isUserAdmin.json();
 				if (!isAdmin || isAdmin.role.toLowerCase() !== 'admin') {
 					return Error('User is not an admin');
@@ -265,7 +242,6 @@ export default {
 				const userModified = await res.json();
 				return userModified;
 			} catch (error) {
-				console.log(error);
 				if (error instanceof Error) {
 					throw new Error(error.message);
 				}
@@ -308,42 +284,6 @@ export default {
 				throw new Error('An unknown error occurred.');
 			}
 		},
-		// USER ONLINE STATUS UPDATE
-		updateUserStatus: async (_parent: unknown, args: {token: string; status: string}) => {
-			let userStatus = false;
-			if (args.status === 'authenticated') {
-				userStatus = true;
-			}
-
-			const userId = authUser(args.token);
-			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
-			}
-
-			await userModel.findByIdAndUpdate(userId, {status: userStatus});
-			pubsub.publish('USER_ONLINE_STATUS', {userOnlineStatus: {userId: userId, userStatus: userStatus}});
-			return userStatus; // or the updated user
-		},
-	},
-	Subscription: {
-		userOnlineStatus: {
-			subscribe: withFilter(
-				() => pubsub.asyncIterator(['USER_ONLINE_STATUS']),
-				(payload, variables) => {
-					if (payload.userOnlineStatus.userId.toString() === variables.userId) {
-						return payload.userOnlineStatus.userStatus;
-					}
-				},
-			),
-		},
-		//likeUpdated
-		// subscribe: withFilter(
-		// 			() => pubsub.asyncIterator(['LIKE_UPDATED']),
-		//		(payload, variables) => {
-		// 			if (payload.userId.toString() === variables.userId) {
-		// 				return payload.likes;
 	},
 };
 

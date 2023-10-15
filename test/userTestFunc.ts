@@ -1,4 +1,3 @@
-// eslint-disable-next-line node/no-unpublished-import
 import request from 'supertest';
 import {UserTest} from '../src/interfaces/User';
 import LoginMessageResponse from '../src/interfaces/LoginMessageResponse';
@@ -316,7 +315,7 @@ mutation DelUser($token: String) {
 }
 `;
 
-const deleteUser = (url: string | Function, userData: LoginMessageResponse): Promise<DBMessageResponse> => {
+const deleteUser = (url: string | Function, userData: LoginMessageResponse): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -334,12 +333,12 @@ const deleteUser = (url: string | Function, userData: LoginMessageResponse): Pro
 				expect(res.body.data.deleteUser.message).toBe('User deleted');
 				expect(res.body.data.deleteUser.user.username).toBe(userData.user.username);
 				expect(res.body.data.deleteUser.user.email).toBe(userData.user.email);
-				resolve(res.body);
+				resolve(res.body.data.deleteUser);
 			});
 	});
 };
 
-const deleteUserWithIncorrectToken = (url: string | Function, token: string): Promise<DBMessageResponse> => {
+const deleteUserWithIncorrectToken = (url: string | Function, token: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -356,7 +355,7 @@ const deleteUserWithIncorrectToken = (url: string | Function, token: string): Pr
 				}
 				expect(res.body.data.deleteUser).toBe(null);
 				expect(res.body.errors[0].message).toBe('User deletion failed');
-				resolve(res.body);
+				resolve(res.body.data.deleteUser);
 			});
 	});
 };
@@ -375,7 +374,7 @@ mutation Mutation($adminToken: String!, $userToBeDeletedId: ID!) {
 }
 `;
 
-const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageResponse, deleteUserID: string): Promise<DBMessageResponse> => {
+const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageResponse, deleteUserID: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -397,12 +396,12 @@ const deleteUserAsAdmin = (url: string | Function, adminData: LoginMessageRespon
 				expect(res.body.data.deleteUserAsAdmin).toHaveProperty('user');
 				expect(res.body.data.deleteUserAsAdmin.user).toHaveProperty('id');
 				expect(res.body.data.deleteUserAsAdmin.user).toHaveProperty('username');
-				resolve(res.body);
+				resolve(res.body.data.deleteUserAsAdmin.user);
 			});
 	});
 };
 
-const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminToken: string, deleteUserID: string): Promise<DBMessageResponse> => {
+const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminToken: string, deleteUserID: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -422,7 +421,7 @@ const deleteUserAsAdminWithOutAdminToken = (url: string | Function, adminToken: 
 
 				expect(res.body.data.deleteUserAsAdmin).toBe(null);
 				expect(res.body.errors[0].message).toBe('Not Authorised!');
-				resolve(res.body);
+				resolve(res.body.data.deleteUserAsAdmin);
 			});
 	});
 };
@@ -490,7 +489,7 @@ mutation Mutation($modifyUser: modifyUserInput) {
 }
 `;
 
-const modifyUser = (url: string | Function, userToken: string, newDesc: string, newAvatar: string): Promise<DBMessageResponse> => {
+const modifyUser = (url: string | Function, userToken: string, newDesc: string, newAvatar: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -517,7 +516,7 @@ const modifyUser = (url: string | Function, userToken: string, newDesc: string, 
 	});
 };
 
-const modifyUserWithIncorrectToken = (url: string | Function, userToken: string, newDesc: string, newAvatar: string): Promise<DBMessageResponse> => {
+const modifyUserWithIncorrectToken = (url: string | Function, userToken: string, newDesc: string, newAvatar: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -558,7 +557,7 @@ mutation Mutation($user: modifyUserAsAdminInput, $modifyUser: ModifyUserWithToke
 }
 `;
 
-const modifyUserAsAdmin = (url: string | Function, adminToken: string, userId: string, newRole: string): Promise<DBMessageResponse> => {
+const modifyUserAsAdmin = (url: string | Function, adminToken: string, userId: string, newRole: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
@@ -588,7 +587,7 @@ const modifyUserAsAdmin = (url: string | Function, adminToken: string, userId: s
 	});
 };
 
-const modifyUserAsAdminWithIncorrectToken = (url: string | Function, adminToken: string, userId: string, newRole: string): Promise<DBMessageResponse> => {
+const modifyUserAsAdminWithIncorrectToken = (url: string | Function, adminToken: string, userId: string, newRole: string): Promise<UserTest> => {
 	return new Promise((resolve, reject) => {
 		request(url)
 			.post('/graphql')
