@@ -13,14 +13,23 @@ const deletedUser: User = new userModel({
 	id: 'DELETED',
 }) as User;
 
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
+};
+
 export default {
 	Subscription: {
 		messageCreated: {
 			subscribe: withFilter(
 				() => pubsub.asyncIterator(['MESSAGE_CREATED']),
 				(payload, variables) => {
-					console.log('messageCreated: payload', payload);
-					console.log('messageCreated: variables', variables);
 					return payload.messageCreated.chatId === variables.chatId;
 				},
 			),
@@ -140,15 +149,4 @@ export default {
 			return deleteMessage;
 		},
 	},
-};
-
-const convertToken = (userToken: string) => {
-	if (!userToken) {
-		return Error('No token');
-	}
-	const userId = authUser(userToken);
-	if (!userId) {
-		return Error('Token conversion failed');
-	}
-	return userId;
 };
