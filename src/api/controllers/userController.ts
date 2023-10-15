@@ -226,7 +226,6 @@ const checkToken = async (req: Request, res: Response, next: NextFunction) => {
 
 const checkAdmin = async (req: Request, res: Response, next: NextFunction) => {
 	const userId = res.locals.user.id;
-	console.log('userId', userId);
 	if (!res.locals.user.role.toLowerCase().includes('admin')) {
 		next(new CustomError('Unauthorized', 401));
 		return;

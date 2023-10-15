@@ -87,7 +87,6 @@ export default {
 		},
 		registerUser: async (_: unknown, args: {user: User}) => {
 			try {
-				console.log(args.user);
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					method: 'POST',
 					headers: {
@@ -95,7 +94,6 @@ export default {
 					},
 					body: JSON.stringify(args.user),
 				});
-				console.log(response);
 				if (!response.ok) {
 					return Error('User registration failed');
 				}
@@ -143,7 +141,6 @@ export default {
 						Authorization: `Bearer ${args.adminToken}`,
 					},
 				});
-				console.log(isUserAdmin);
 				const isAdmin = await isUserAdmin.json();
 				if (!isAdmin || isAdmin.role.toLowerCase() !== 'admin') {
 					return Error('User is not an admin');
@@ -245,7 +242,6 @@ export default {
 				const userModified = await res.json();
 				return userModified;
 			} catch (error) {
-				console.log(error);
 				if (error instanceof Error) {
 					throw new Error(error.message);
 				}

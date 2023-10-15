@@ -52,18 +52,18 @@ const wsServer = new WebSocketServer({
 			{
 				schema,
 				onConnect: async (ctx) => {
-					console.log('client connected');
+					console.log('client connected ' + Date.now().toString());
 				},
 				onSubscribe: (ctx, msg) => {
-					console.log('client subscribed');
+					console.log('client subscribed ' + Date.now().toString());
 				},
 				onDisconnect: (ctx, code, reason) => {
 					// if (code === 1000) {
-						console.log('client disconnected');
+					console.log('client disconnected ' + Date.now().toString());
 					// }
 				},
 				onClose: (ctx, code, reason) => {
-					console.log('client closed');
+					console.log('client closed ' + Date.now().toString());
 				},
 			},
 			wsServer,
@@ -86,7 +86,6 @@ const wsServer = new WebSocketServer({
 				},
 			],
 			formatError: (formattedError, data) => {
-				console.log(formattedError);
 				return formattedError;
 			},
 			includeStacktraceInErrorResponses: false,
