@@ -352,7 +352,7 @@ describe('Testing backend functions', () => {
 			await deleteMessageAsSomeoneElse(app, userData2, testMessages[length - 1].id as string);
 		});
 
-		it('admin delete should only work for admins', async () => {
+		it('should be only able to use as admin', async () => {
 			const length = testMessages.length;
 			await deleteMessageAsAdminButUser(app, userData2, testMessages[length - 1].id as string);
 		});
