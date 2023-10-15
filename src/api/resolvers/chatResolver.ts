@@ -44,7 +44,6 @@ export default {
 			return response;
 		},
 		chatsByUser: async (_parent: unknown, args: {userToken: string}) => {
-			console.log('args.token', args.userToken);
 			const userId = authUser(args.userToken);
 			if (!userId) {
 				throw new GraphQLError('Not authorized', {
@@ -52,14 +51,12 @@ export default {
 				});
 			}
 			const chats = await chatModel.find({users: userId});
-			console.log('chats', chats);
 			if (!chats) {
 				throw new GraphQLError('No chats found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
 			const plainChats = chats.map((chat) => chat.toJSON() as Chat);
-			console.log(plainChats);
 			return plainChats;
 		},
 		chatById: async (_parent: unknown, args: {id: string}) => {
@@ -76,7 +73,6 @@ export default {
 		leaveChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
-				console.log('leaveChat: chat not found', args.chatId);
 				throw new GraphQLError('Chat not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
@@ -84,7 +80,6 @@ export default {
 
 			const userId = authUser(args.userToken);
 			const leavingUser = await userModel.findById(userId);
-			console.log('leaveChat: leavingUser=', leavingUser);
 			if (!leavingUser) {
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
@@ -92,7 +87,6 @@ export default {
 			}
 
 			chat.users = chat.users.filter((user) => user._id.toString() !== userId);
-			console.log('leaveChat: chat.users=', chat.users);
 			const updatedChat = await chat.save();
 			pubsub.publish('USER_LEFT_CHAT', {
 				updatedChat: {
@@ -108,7 +102,6 @@ export default {
 		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
-				console.log('joinChat: chat not found', args.chatId);
 				throw new GraphQLError('Chat not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
@@ -117,7 +110,6 @@ export default {
 			const userId = authUser(args.userToken);
 			const user = await userModel.findById(userId);
 			if (!user || !userId) {
-				console.log('joinChat: user not found', userId);
 				throw new GraphQLError('User not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
