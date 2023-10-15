@@ -28,18 +28,12 @@ export default {
 	},
 	Message: {
 		sender: async (parent: Message) => {
-			try {
-				const response = await userModel.findById(parent.sender.toJSON());
-				if (response === null) {
-					return deletedUser;
-				}
-				return response as User;
-			} catch (error) {
-				if (error instanceof Error) {
-					throw new Error(error.message);
-				}
-				throw new Error('Failed to get sender for message id: ' + parent._id);
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
+			if (response === null || !response.ok) {
+				return deletedUser;
 			}
+			const user = await response.json();
+			return user;
 		},
 	},
 	Query: {
