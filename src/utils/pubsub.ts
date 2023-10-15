@@ -1,6 +1,4 @@
-// pubsub.js
-
-import { PubSub } from 'graphql-subscriptions';
+import {PubSub} from 'graphql-subscriptions';
 
 const pubsub = new PubSub();
 

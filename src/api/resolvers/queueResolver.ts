@@ -4,9 +4,21 @@ import {GraphQLError} from 'graphql';
 import {QueueEntry, QueueResponse} from '../../interfaces/Queue';
 import authUser from '../../utils/auth';
 import chatModel from '../models/chatModel';
-import {PubSub} from 'graphql-subscriptions';
 import mongoose from 'mongoose';
 import pubsub from '../../utils/pubsub';
+import {User} from '../../interfaces/User';
+import userModel from '../models/userModel';
+
+const deletedUser: User = new userModel({
+	username: 'DELETED',
+	email: 'DELETED',
+	password: 'DELETED',
+	description: 'DELETED',
+	avatar: 'DELETED',
+	lastLogin: 1697133837252,
+	role: 'DELETED',
+	likes: 404,
+}) as User;
 
 function transformQueueEntry(queueEntry: QueueEntry): any {
 	return {
@@ -47,7 +59,7 @@ async function initiateChatLogic(userId: string) {
 			);
 
 			await queueModel.findByIdAndDelete(firstInQueue.id);
-			
+
 			pubsub.publish('CHAT_STARTED', {
 				updatedChat: {
 					eventType: 'CHAT_STARTED',
@@ -106,6 +118,16 @@ async function dequeueUserLogic(userId: string) {
 }
 
 export default {
+	QueueEntry: {
+		userId: async (parent: QueueEntry) => {
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.userId.id}`);
+			if (response === null || !response.ok) {
+				return deletedUser;
+			}
+			const user = await response.json();
+			return user;
+		},
+	},
 	ChatOrQueueResponse: {
 		__resolveType(obj: QueueResponse) {
 			if (obj.chatId !== undefined) {

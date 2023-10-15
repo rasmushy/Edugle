@@ -12,7 +12,7 @@ export default {
 		users: async (parent: Chat) => {
 			try {
 				const response = await userModel.find({_id: {$in: parent.users}}, {password: 0});
-				return response
+				return response;
 			} catch (error) {
 				if (error instanceof Error) {
 					throw new Error(error.message);
@@ -61,6 +61,9 @@ export default {
 		},
 		chatById: async (_parent: unknown, args: {id: string}) => {
 			const response: Chat = (await chatModel.findById(args.id)) as Chat;
+			if (!response || response === null) {
+				Error('Chat not found');
+			}
 			const newChat = {
 				...response.toJSON(),
 				users: response.users.map((user) => user._id),
