@@ -1,18 +1,43 @@
 import {GraphQLError} from 'graphql';
+import {PubSub, withFilter} from 'graphql-subscriptions';
 import {Chat} from '../../interfaces/Chat';
 import chatModel from '../models/chatModel';
 import userModel from '../models/userModel';
 import messageModel from '../models/messageModel';
 import authUser from '../../utils/auth';
-import {PubSub} from 'graphql-subscriptions';
-const pubsub = new PubSub();
+import pubsub from '../../utils/pubsub';
+import {User} from '../../interfaces/User';
+const deletedUser: User = new userModel({
+	id: 'DELETED',
+	
+}) as User;
+
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
+};
 
 export default {
 	Chat: {
 		users: async (parent: Chat) => {
 			try {
-				const response = await userModel.find({_id: {$in: parent.users}});
-				return response;
+				const response = await userModel.find({_id: {$in: parent.users}}, {password: 0});
+/* 				const modifiedResponse = response.map((user) => {
+					if (user === null) {
+					console.log('user', user);
+						return deletedUser;
+					}
+
+					return user;
+				}); */
+
+				return response
 			} catch (error) {
 				if (error instanceof Error) {
 					throw new Error(error.message);
@@ -24,6 +49,13 @@ export default {
 			if (parent.messages.length < 1) return [];
 			try {
 				const response = await messageModel.find({_id: {$in: parent.messages}});
+/* 				const modifiedResponse = response.map((message) => {
+					if (!message.sender === "Deleted User") {
+						console.log('message.sender', message.sender);
+						message.sender = deletedUser;
+					}
+					return message;
+				}); */
 				const foundIds = response.map((message) => message._id.toString());
 				const missingIds = parent.messages.filter((id) => !foundIds.includes(id.toString()));
 				if (missingIds.length > 0) {
@@ -75,57 +107,68 @@ export default {
 	Mutation: {
 		leaveChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
 			const chat = await chatModel.findById(args.chatId);
-			//console.log('leaveChat: chat=', chat);
 			if (!chat) {
+				console.log('leaveChat: chat not found', args.chatId);
 				throw new GraphQLError('Chat not found', {
 					extensions: {code: 'NOT_FOUND'},
 				});
 			}
 
 			const userId = authUser(args.userToken);
-			console.log('leaveChat: userId=', userId);
-			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
+			const leavingUser = await userModel.findById(userId);
+			console.log('leaveChat: leavingUser=', leavingUser);
+			if (!leavingUser) {
+				throw new GraphQLError('User not found', {
+					extensions: {code: 'NOT_FOUND'},
 				});
 			}
 
 			chat.users = chat.users.filter((user) => user._id.toString() !== userId);
+			console.log('leaveChat: chat.users=', chat.users);
 			const updatedChat = await chat.save();
-			//console.log('leaveChat: updatedChat=', updatedChat);
-			pubsub.publish('CHAT_ENDED', {chatEnded: updatedChat});
+			pubsub.publish('USER_LEFT_CHAT', {
+				updatedChat: {
+					eventType: 'USER_LEFT_CHAT',
+					message: `${leavingUser.username} has left chat`,
+					chat: updatedChat,
+					timestamp: Date.now(),
+				},
+			});
 			return updatedChat;
 		},
 
-		joinChat: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
-			//console.log('joinChat: args=', args);
+		joinChat: async (_parent: unknown, args: {chatId: string; token: string}) => {
 			const chat = await chatModel.findById(args.chatId);
 			if (!chat) {
-				return Error('Chat not found');
+				console.log('joinChat: chat not found', args.chatId);
+				throw new GraphQLError('Chat not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
 			}
 
-			const userId = convertToken(args.userToken);
-			if (!userId) {
-				return Error('Not authorized');
-			}
-
+			const userId = authUser(args.token);
 			const user = await userModel.findById(userId);
-
-			//console.log('joinChat: user=', user);
-			if (!user) {
-				return Error('User not found');
+			if (!user || !userId) {
+				console.log('joinChat: user not found', userId);
+				throw new GraphQLError('User not found', {
+					extensions: {code: 'NOT_FOUND'},
+				});
 			}
 
-			const chatWithUser = await chatModel.findOne({users: {$all: [userId, args.chatId]}});
-
-			//console.log('joinChat: chatWithUser=', chatWithUser);
-			if (chatWithUser) {
-				return Error('User already in chat');
+			//add user to chat if not already in chat
+			if (!chat.users.some((user) => user._id.toString() === userId)) {
+				chat.users.push(user);
 			}
 
-			chat.users.push(user);
 			const updatedChat = await chat.save();
-			//console.log('updatedChat users', updatedChat.users);
+			pubsub.publish('USER_JOINED_CHAT', {
+				updatedChat: {
+					eventType: 'USER_JOINED_CHAT',
+					message: `${user.username} has joined chat`,
+					chat: chat,
+					timestamp: Date.now(),
+				},
+			});
 			return updatedChat;
 		},
 		createChat: async (_parent: unknown, args: {chat: Chat}) => {
@@ -140,7 +183,9 @@ export default {
 					extensions: {code: 'NOT_CREATED'},
 				});
 			}
-			pubsub.publish('NEW_CHAT_STARTED', {newChatStarted: createChat});
+			pubsub.publish('CHAT_STARTED', {
+				updatedChat: {eventType: 'CHAT_STARTED', message: `Created chat for no reason at all`, chat: createChat, timestamp: Date.now()},
+			});
 			return createChat;
 		},
 		deleteChatAsAdmin: async (_parent: unknown, args: {chatId: string; userToken: string}) => {
@@ -166,19 +211,22 @@ export default {
 		},
 	},
 	Subscription: {
-		chatEnded: {
-			subscribe: () => pubsub.asyncIterator('CHAT_ENDED'),
+		updatedChat: {
+			subscribe: withFilter(
+				() => pubsub.asyncIterator(['USER_JOINED_CHAT', 'USER_LEFT_CHAT', 'CHAT_STARTED', 'USER_SENT_MESSAGE']),
+				(payload, variables) => {
+					console.log('updatedChat payload: ', payload.updatedChat);
+					console.log('updatedChat chatId: ', payload.updatedChat.chat.id);
+					console.log('updatedChat variables.userId: ', variables.userId);
+					console.log('updatedChat users: ', payload.updatedChat.chat.users);
+					try {
+						return payload.updatedChat.chat.users.filter((user: any) => user._id.toString() === variables.userId).length > 0;
+					} catch (err) {
+						console.error('Filter function error:', err);
+						return false;
+					}
+				},
+			),
 		},
 	},
-};
-
-const convertToken = (userToken: string) => {
-	if (!userToken) {
-		return Error('No token');
-	}
-	const userId = authUser(userToken);
-	if (!userId) {
-		return Error('Token conversion failed');
-	}
-	return userId;
 };

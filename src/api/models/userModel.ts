@@ -37,6 +37,8 @@ const userModel = new mongoose.Schema<User>({
 	},
 });
 
+userModel.index({id: 1}, {unique: true});
+
 userModel.set('toJSON', {
 	transform: (document, returnedObject) => {
 		returnedObject.id = returnedObject._id;

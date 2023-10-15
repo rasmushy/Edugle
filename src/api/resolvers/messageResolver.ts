@@ -1,39 +1,44 @@
-import {GraphQLError} from 'graphql';
 import {Message, newMessage} from '../../interfaces/Message';
 import {Chat} from '../../interfaces/Chat';
 import messageModel from '../models/messageModel';
 import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 import authUser from '../../utils/auth';
-import {PubSub} from 'graphql-subscriptions';
+import {withFilter} from 'graphql-subscriptions';
+import pubsub from '../../utils/pubsub';
 import {User} from '../../interfaces/User';
+import {GraphQLError} from 'graphql/error/GraphQLError';
 
-const pubsub = new PubSub();
 const deletedUser: User = new userModel({
-	username: 'DELETED',
-	email: 'DELETED',
-	password: 'DELETED',
-	description: 'DELETED',
-	avatar: 'DELETED',
-	lastLogin: 1697133837252,
-	role: 'DELETED',
-	likes: 404,
+	id: 'DELETED',
 }) as User;
 
 export default {
 	Subscription: {
 		messageCreated: {
-			subscribe: (_parent: unknown, arg: {chatId: string}) => pubsub.asyncIterator([arg.chatId]),
+			subscribe: withFilter(
+				() => pubsub.asyncIterator(['MESSAGE_CREATED']),
+				(payload, variables) => {
+					console.log('messageCreated: payload', payload);
+					console.log('messageCreated: variables', variables);
+					return payload.messageCreated.chatId === variables.chatId;
+				},
+			),
 		},
 	},
 	Message: {
 		sender: async (parent: Message) => {
-			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
-			if (response === null || !response.ok) {
-				return deletedUser;
+			try {
+				const response = await userModel.findById(parent.sender.toJSON(), {password: 0});
+				if (!response) {
+					return deletedUser;
+				}
+				return response;
+			} catch (error: any) {
+				throw new GraphQLError(error.statusText, {
+					extensions: {code: 'NOT_FOUND'},
+				});
 			}
-			const user = await response.json();
-			return user;
 		},
 	},
 	Query: {
@@ -81,24 +86,29 @@ export default {
 			if (!chat) {
 				return Error('Chat not found');
 			}
+
 			const newMessage: Message = new messageModel({
 				date: Date.now(),
 				content: args.message.content,
 				sender: userId,
 			}) as Message;
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
-			if (!createMessage) {
-				return Error('Failed to create message');
-			}
+			if (!createMessage) return;
 			chat.messages.push(createMessage.id);
 			await chat.save();
-
-			pubsub.publish(args.chatId, {
+			pubsub.publish('MESSAGE_CREATED', {
 				messageCreated: {
-					id: createMessage.id,
-					created_date: Date.now(),
-					messages: chat.messages,
-					users: userId,
+					message: createMessage,
+					chatId: chat.id,
+					timestamp: Date.now(),
+				},
+			});
+			pubsub.publish('USER_SENT_MESSAGE', {
+				updatedChat: {
+					eventType: 'USER_SENT_MESSAGE',
+					message: `User: ${userId} sent message`,
+					chat: chat,
+					timestamp: Date.now(),
 				},
 			});
 			return createMessage;

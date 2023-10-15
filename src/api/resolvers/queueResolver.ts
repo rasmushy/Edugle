@@ -4,27 +4,9 @@ import {GraphQLError} from 'graphql';
 import {QueueEntry, QueueResponse} from '../../interfaces/Queue';
 import authUser from '../../utils/auth';
 import chatModel from '../models/chatModel';
-import {User} from '../../interfaces/User';
 import {PubSub} from 'graphql-subscriptions';
-
-/*
-TODO: have subscriptions for the following events:
-- user online status
-
-TODO: refactor the code to make it more readable
-*/
-
-const pubsub = new PubSub();
-
-let globalQueueCounter: any = null;
-
-//Optimizing the queue counter
-async function getGlobalQueueCounter() {
-	if (globalQueueCounter === null) {
-		globalQueueCounter = await queueModel.countDocuments();
-	}
-	return globalQueueCounter;
-}
+import mongoose from 'mongoose';
+import pubsub from '../../utils/pubsub';
 
 function transformQueueEntry(queueEntry: QueueEntry): any {
 	return {
@@ -34,6 +16,93 @@ function transformQueueEntry(queueEntry: QueueEntry): any {
 			id: queueEntry.userId.toString(),
 		},
 	};
+}
+
+async function initiateChatLogic(userId: string) {
+	//ENQUEUE USER
+	// Check if user is already in the queue or not, lean() returns a plain JS object instead of full mongoose document.
+	const userInQueue = await queueModel.findOne({userId: userId}).lean();
+	if (userInQueue) {
+		return {status: 'In queue', position: 0};
+	}
+
+	const session = await mongoose.startSession();
+	session.startTransaction();
+
+	try {
+		// Find first user in queue
+		const firstInQueue = await queueModel.findOne({}).sort({joinedAt: 1}).session(session).exec();
+
+		if (firstInQueue) {
+			// Pair the two users
+			const newChat = await chatModel.create(
+				[
+					{
+						created_date: Date.now(),
+						users: [firstInQueue.userId, userId],
+						messages: [],
+					},
+				],
+				{session: session},
+			);
+
+			await queueModel.findByIdAndDelete(firstInQueue.id);
+			
+			pubsub.publish('CHAT_STARTED', {
+				updatedChat: {
+					eventType: 'CHAT_STARTED',
+					message: `Chat started ${newChat[0].id}`,
+					chat: newChat[0],
+					timestamp: Date.now(),
+				},
+			});
+
+			await session.commitTransaction();
+			session.endSession();
+
+			return {status: 'Paired', chatId: newChat[0].id};
+		} else {
+			// Enqueue the user
+			await queueModel.create(
+				[
+					{
+						userId: userId,
+						joinedAt: new Date(),
+					},
+				],
+				{session: session},
+			);
+
+			pubsub.publish('USER_JOINED_QUEUE', {message: `User joined queue`, timestamp: Date.now()});
+			const currentPosition = await queueModel.countDocuments({}).session(session).exec();
+			await session.commitTransaction();
+			session.endSession();
+
+			// Position can be inferred later when required.
+			return {status: 'Queue', position: currentPosition};
+		}
+	} catch (error) {
+		await session.abortTransaction();
+		session.endSession();
+		throw error;
+	}
+}
+
+async function dequeueUserLogic(userId: string) {
+	//DEQUEUE USER
+	// Return pos 0 if not in queue, else pos > 0.
+	const deletedUser = await queueModel.findOneAndDelete({userId: userId});
+	if (!deletedUser) {
+		return {status: 'User not in queue', position: 0};
+	}
+
+	// Notify the next user in line, if any
+	const usersToUpdate = await queueModel.find({joinedAt: {$gt: deletedUser.joinedAt}});
+	usersToUpdate.forEach((user) => {
+		pubsub.publish('USER_LEFT_QUEUE', {message: `User: ${user.userId} left queue`, timestamp: Date.now()});
+	});
+
+	return {status: 'User left from queue', position: 0};
 }
 
 export default {
@@ -55,144 +124,43 @@ export default {
 		},
 		queuePosition: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
-			if(!userId) {
-				return Error('Not authorized');
+			if (!userId) {
+				throw new GraphQLError('Not authorized');
 			}
-			const userInQueue = await queueModel.findById(userId);
+
+			const userInQueue = await queueModel.findOne({userId});
 			if (!userInQueue) {
 				return {status: 'Not in Queue', position: 0};
 			}
-			return {status: 'In queue', position: userInQueue.position + 1};
+
+			const position = await queueModel.countDocuments({joinedAt: {$lt: userInQueue.joinedAt}});
+			return {status: 'In queue', position: position + 1};
 		},
 	},
 	Mutation: {
-		//ENQUEUE USER & INITIATE CHAT
 		initiateChat: async (_parent: unknown, args: {token: string}) => {
 			const userId = authUser(args.token);
-			//console.log('initiateChat: userId=', userId);
 			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+				throw new GraphQLError('Not authorized');
 			}
-			// Check if user is already in the queue
-			const userInQueue = await queueModel.findOne({userId: userId});
-			if (userInQueue) {
-				console.log('initiateChat: userInQueue=', userInQueue.id);
-				return ({status: 'In queue', position: userInQueue.position + 1});
-			}
-
-			// Find first user in queue
-			const firstInQueue = await queueModel.findOne({}).sort({joinedAt: 1}).exec();
-
-			if (firstInQueue) {
-				console.log('initiateChat: firstInQueue=', firstInQueue?.id);
-				// Create a chat & delete the first user in the queue
-				const newChat = await chatModel.create({
-					created_date: Date.now(),
-					users: [firstInQueue.userId, userId],
-					messages: [],
-				});
-				//console.log('initiateChat: newChat=', newChat);
-				await queueModel.findByIdAndDelete(firstInQueue.id);
-				--globalQueueCounter;
-
-				// Publish chat update to the current user & the other user
-				pubsub.publish(`CHAT_STARTED`, {chatStarted: newChat});
-
-				return {status: 'Paired', chatId: newChat.id};
-			} else {
-				//Else add user to the queue
-				const currentPosition = (await getGlobalQueueCounter()) + 1;
-				globalQueueCounter++;
-
-				const newQueueEntry: QueueEntry = (await queueModel.create({
-					userId: userId,
-					position: currentPosition,
-					joinedAt: new Date(),
-				})) as QueueEntry;
-
-				console.log('initiateChat: newQueueEntry=', newQueueEntry.userId);
-				return {status: 'Queue', position: currentPosition + 1};
-			}
+			return initiateChatLogic(userId);
 		},
-		//DEQUEUE USER
-		// Return pos 0 if not in queue, else pos > 0.
 		dequeueUser: async (_parent: unknown, args: {token: string}) => {
-			try {
-				
-				const userId = authUser(args.token);
-				if(!userId) 
-				return Error('Not authorized');
-			
-				const userInQueue = await queueModel.findOne({userId: userId}); // check if user is in the queue
-				if (!userInQueue) {
-					return {status: 'User not in queue', position: 0};
-				};
-				
-				console.log('userInQueue', userInQueue);
-				await queueModel.findOneAndDelete({userId: userId}); // remove user from the queue
-				// Update the positions of the remaining users in the queue
-				const queueEntries = await queueModel.find().sort({joinedAt: 1}).exec();
-				queueEntries.forEach(async (entry: any, index: number) => {
-					entry.position = index + 1;
-					await entry.save();
-				});
-				console.log('queueEntries', queueEntries);
-				
-				const newPosition = await queueModel.countDocuments();
-				--globalQueueCounter;
-				console.log('newPosition', newPosition);
-				
-				// Notify the next user in line, if any
-				const usersToUpdate = await queueModel.find({position: {$gt: userInQueue.position}});
-				usersToUpdate.forEach((user) => {
-					pubsub.publish(`QUEUE_POSITION_${user.userId}`, {position: user.position - 1, userId: user.userId});
-				});
-				
-				return {status: 'User left from queue', position: 0};
-			} catch (error) {
-				return error;
+			const userId = authUser(args.token);
+			if (!userId) {
+				throw new GraphQLError('Not authorized');
 			}
+			return dequeueUserLogic(userId);
 		},
 	},
 	Subscription: {
-		//pubsub.publish('USER_LEFT_QUEUE', {userLeftQueue: userInQueue});
-		// subscribe: withFilter(
-		// 	() => pubsub.asyncIterator(['QUEUE_POSITION_UPDATED']),
-		// 	(payload, variables) => {
-		// 		// Return position if the payload userId matches the userId argument
-		// 		if (payload.userId.toString() === variables.userId) {
-		// 			return payload.position;
-		// 		}
-		// 	},
-		// ),
 		queuePositionUpdated: {
-			subscribe: (userId: string) => {
-				return pubsub.asyncIterator([`QUEUE_POSITION_${userId}`]);
-			},
-		},
-		chatStarted: {
 			subscribe: withFilter(
-				() => pubsub.asyncIterator(`CHAT_STARTED`),
+				() => pubsub.asyncIterator(['USER_LEFT_QUEUE', 'USER_JOINED_QUEUE']),
 				(payload, variables) => {
-					const users = payload.chatStarted.users.map((user: User) => user._id.toString());
-					console.log('chatStarted: users=', users);
-					console.log('chatStarted: variables=', variables);
-					return users.includes(variables.userId);
+					return payload.userId.toString() === variables.userId;
 				},
 			),
-		},
-		//admin type of stuff / analyze data
-		userJoinedQueue: {
-			subscribe: () => {
-				return pubsub.asyncIterator(['USER_JOINED_QUEUE']);
-			},
-		},
-		userLeftQueue: {
-			subscribe: () => {
-				return pubsub.asyncIterator(['USER_LEFT_QUEUE']);
-			},
 		},
 	},
 };

@@ -4,7 +4,7 @@
 name: Build and deploy Node.js app to Azure Web App - edugle-backend
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "rasmus/refactor" ]
   workflow_dispatch:
 
 permissions:

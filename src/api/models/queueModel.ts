@@ -11,10 +11,6 @@ const queueSchema = new mongoose.Schema<QueueEntry>({
 		ref: 'User',
 		required: true,
 	},
-	position: {
-		type: Number,
-		required: true,
-	},
 });
 
 queueSchema.index({joinedAt: 1}, {expireAfterSeconds: 1800});
