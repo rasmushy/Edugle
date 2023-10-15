@@ -13,6 +13,17 @@ const deletedUser: User = new userModel({
 	id: 'DELETED',
 }) as User;
 
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
+};
+
 export default {
 	Subscription: {
 		messageCreated: {
@@ -138,15 +149,4 @@ export default {
 			return deleteMessage;
 		},
 	},
-};
-
-const convertToken = (userToken: string) => {
-	if (!userToken) {
-		return Error('No token');
-	}
-	const userId = authUser(userToken);
-	if (!userId) {
-		return Error('Token conversion failed');
-	}
-	return userId;
 };
