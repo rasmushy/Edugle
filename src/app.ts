@@ -37,6 +37,10 @@ const wsServer = new WebSocketServer({
 			Mutation: {
 				loginUser: rateLimitRule({window: '1s', max: 5}),
 				initiateChat: rateLimitRule({window: '1s', max: 5}),
+				sendMessage: rateLimitRule({window: '1s', max: 5}),
+				createUser: rateLimitRule({window: '1s', max: 5}),
+				joinChat: rateLimitRule({window: '1s', max: 5}),
+				leaveChat: rateLimitRule({window: '1s', max: 5}),
 			},
 		});
 
