@@ -26,12 +26,13 @@ This school project aims to create a real-time, text-based chat platform that al
 ## How to run the tests:
 
 1. Run `npm test` in the root folder
-To run tests you will need to have admin profile manually added to your test database users collection like this:
+To run tests you will need to have admin profile manually added to your test database users collection matching like this:
 {
 username: "admin",
 email: "admin@test.fi",
 password: "admin"
 }
+Role needs to be changed to admin! Others collections should be empty!
 
 ## Environment variables:
 
