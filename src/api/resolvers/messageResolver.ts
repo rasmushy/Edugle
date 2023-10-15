@@ -6,8 +6,19 @@ import userModel from '../models/userModel';
 import chatModel from '../models/chatModel';
 import authUser from '../../utils/auth';
 import {PubSub} from 'graphql-subscriptions';
+import {User} from '../../interfaces/User';
 
 const pubsub = new PubSub();
+const deletedUser: User = new userModel({
+	username: 'DELETED',
+	email: 'DELETED',
+	password: 'DELETED',
+	description: 'DELETED',
+	avatar: 'DELETED',
+	lastLogin: 1697133837252,
+	role: 'DELETED',
+	likes: 404,
+}) as User;
 
 export default {
 	Subscription: {
@@ -15,32 +26,60 @@ export default {
 			subscribe: (_parent: unknown, arg: {chatId: string}) => pubsub.asyncIterator([arg.chatId]),
 		},
 	},
+	Message: {
+		sender: async (parent: Message) => {
+			const response = await fetch(`${process.env.AUTH_URL}/users/${parent.sender.toJSON()}`);
+			if (response === null || !response.ok) {
+				return deletedUser;
+			}
+			const user = await response.json();
+			return user;
+		},
+	},
 	Query: {
 		messages: async () => {
-			const response = await messageModel.find({});
-			return response;
-		},
-		messageById: async (_parent: unknown, args: Message) => {
-			return await messageModel.findById(args.id);
-		},
-		messagesBySenderToken: async (_parent: unknown, args: {token: string}) => {
-			const messages = await messageModel.find({sender: authUser(args.token)});
+			const messages = await messageModel.find({});
+			if (!messages) {
+				return Error('No messages found');
+			}
 			return messages;
 		},
-		messagesBySenderId: async (_parent: unknown, args: {id: string}) => {
-			const messages = await messageModel.find({sender: args.id});
+		messageById: async (_parent: unknown, args: {messageId: string}) => {
+			const message = await messageModel.findById(args.messageId);
+			if (!message) {
+				return Error('Message not found');
+			}
+			return message;
+		},
+		messagesBySenderToken: async (_parent: unknown, args: {userToken: string}) => {
+			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
+			}
+			const messages = await messageModel.find({sender: userId});
+			if (!messages) {
+				return Error('No messages found');
+			}
+			return messages;
+		},
+		messagesBySenderId: async (_parent: unknown, args: {userId: string}) => {
+			const messages = await messageModel.find({sender: args.userId});
+			if (!messages) {
+				return Error('No messages found');
+			}
 			return messages;
 		},
 	},
 
 	Mutation: {
-		createMessage: async (_parent: unknown, args: {chat: string; message: newMessage}) => {
-			if (!args.message.senderToken) return;
-			const userId = authUser(args.message.senderToken);
-			if (!userId) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+		createMessage: async (_parent: unknown, args: {chatId: string; message: newMessage}) => {
+			const userId = convertToken(args.message.senderToken);
+			if (userId instanceof Error) {
+				return userId;
+			}
+			const chat: Chat = (await chatModel.findById(args.chatId)) as Chat;
+			if (!chat) {
+				return Error('Chat not found');
 			}
 			const newMessage: Message = new messageModel({
 				date: Date.now(),
@@ -48,18 +87,13 @@ export default {
 				sender: userId,
 			}) as Message;
 			const createMessage: Message = (await messageModel.create(newMessage)) as Message;
-			//console.log('createMessage: createMessage=', createMessage);
 			if (!createMessage) {
-				throw new GraphQLError('Failed to create message', {
-					extensions: {code: 'NOT_CREATED'},
-				});
+				return Error('Failed to create message');
 			}
-			const chat: Chat = (await chatModel.findById(args.chat)) as Chat;
-			//console.log('createMessage: chat=', chat);
 			chat.messages.push(createMessage.id);
 			await chat.save();
 
-			pubsub.publish(args.chat, {
+			pubsub.publish(args.chatId, {
 				messageCreated: {
 					id: createMessage.id,
 					created_date: Date.now(),
@@ -70,50 +104,41 @@ export default {
 			return createMessage;
 		},
 
-		deleteMessage: async (_parent: unknown, args: {id: string; userToken: string}) => {
-			const message: Message = (await messageModel.findById(args.id)) as Message;
-			if (!args.userToken || message.sender.toString() !== authUser(args.userToken)) {
-				throw new GraphQLError('Not authorized', {
-					extensions: {code: 'NOT_AUTHORIZED'},
-				});
+		deleteMessage: async (_parent: unknown, args: {messageId: string; userToken: string}) => {
+			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
 			}
-			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
+			const message: Message = (await messageModel.findById(args.messageId)) as Message;
+			if (message.sender.toString() !== userId) {
+				return Error('Not authorized!');
+			}
+			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
 		},
 
-		deleteMessageAsAdmin: async (_parent: unknown, args: {id: string; userToken: string | null}) => {
-			const userToken = args.userToken;
-			if (!userToken) {
-				throw new GraphQLError('No toke', {
-					extensions: { code: 'NO_TOKEN' },
-				});
-			}
-			const userId = authUser(userToken);
-			if (!userId) {
-				throw new GraphQLError('Token conversion failed', {
-					extensions: { code: 'FAILED_TO_CONVERT' },
-				});
+		deleteMessageAsAdmin: async (_parent: unknown, args: {messageId: string; userToken: string}) => {
+			const userId = convertToken(args.userToken);
+			if (userId instanceof Error) {
+				return userId;
 			}
 			const user = await userModel.findById(userId);
 			if (!user || user.role !== 'admin') {
-				throw new GraphQLError('Not authorized', {
-					extensions: { code: 'NOT_AUTHORIZED' },
-				});
+				return Error('Not authorized!');
 			}
-			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.id)) as Message;
+			const deleteMessage: Message = (await messageModel.findByIdAndDelete(args.messageId)) as Message;
 			return deleteMessage;
 		},
-	},	
-	Message: {
-		sender: async (parent: Message) => {
-			try {
-				const response = await userModel.findById(parent.sender.toJSON());
-				return response;
-			} catch (error: any) {
-				throw new GraphQLError(error.statusText, {
-					extensions: {code: 'NOT_FOUND'},
-				});
-			}
-		},
 	},
+};
+
+const convertToken = (userToken: string) => {
+	if (!userToken) {
+		return Error('No token');
+	}
+	const userId = authUser(userToken);
+	if (!userId) {
+		return Error('Token conversion failed');
+	}
+	return userId;
 };
