@@ -10,6 +10,17 @@ export default {
 	Query: {
 		users: async (_parent: unknown, args: {token: string}) => {
 			try {
+				const userId = convertToken(args.token);
+				if (userId instanceof Error || !userId) {
+					return Error('Not authorized');
+				}
+				const user = await userModel.findOne({_id: userId}, {password: 0});
+				if (!user) {
+					return Error('User not found');
+				}
+				if (user.role.toLowerCase() !== 'admin') {
+					return Error('Not authorized. You are not an admin');
+				}
 				const response = await fetch(`${process.env.AUTH_URL}/users`, {
 					headers: {
 						Authorization: `Bearer ${args.token}`,

@@ -36,7 +36,10 @@ const wsServer = new WebSocketServer({
 		const permissions = shield({
 			Mutation: {
 				loginUser: rateLimitRule({window: '1s', max: 5}),
+				registerUser: rateLimitRule({window: '1s', max: 5}),
 				initiateChat: rateLimitRule({window: '1s', max: 5}),
+				joinChat: rateLimitRule({window: '1s', max: 5}),
+				leaveChat: rateLimitRule({window: '1s', max: 5}),
 			},
 		});
 

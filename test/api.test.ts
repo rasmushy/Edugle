@@ -176,8 +176,8 @@ describe('Testing backend functions', () => {
 			await deleteUser(app, delUserData);
 		});
 
-		it('should get users', async () => {
-			await getUsers(app, userData);
+		it('should get users as admin', async () => {
+			await getUsers(app, adminUserData);
 		});
 
 		it('should get a user by token', async () => {
